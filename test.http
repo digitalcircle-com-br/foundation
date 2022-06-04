@@ -1,0 +1,44 @@
+@basepath=http://localhost:8080
+
+
+# @name TEST-GETPOST
+GET {{basepath}}/test/test?a=ASD123
+Content-Type: application/json
+Accept: application/json
+
+{
+    "a":1,
+    "b":"asd"
+}
+
+###
+# @name TEST
+POST {{basepath}}/test
+Content-Type: application/json
+Accept: application/json
+
+{
+    "a":1,
+    "b":"asd"
+}
+
+###
+
+# @name STATIC
+GET  {{basepath}}/test/a/b/c.html
+
+###
+
+# @name STATIC
+GET  {{basepath}}/index.html
+
+
+
+###
+# @name LOGIN# @name LOGIN
+POST {{basepath}}/auth/login
+
+{
+    "login":"root",
+    "password":"root"
+}
