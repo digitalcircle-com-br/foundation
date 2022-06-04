@@ -86,7 +86,10 @@ func qserveOnceHttp(ctx context.Context, q string, m *mux.Router) error {
 		return err
 	}
 	qid := req.Header.Get("X-RETURN-QID")
-	err = rediscli.LPush(ctx, qid, buf.Bytes()).Err()
+	if qid != "" {
+		err = rediscli.LPush(ctx, qid, buf.Bytes()).Err()
+		rediscli.Expire(ctx, qid, time.Minute)
+	}
 
 	return err
 }

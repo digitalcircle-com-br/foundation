@@ -84,6 +84,7 @@ func Handle[TIN, TOUT any](hpath string, method string, perm model.PermDef, f fu
 		case http.MethodPut:
 			err := json.NewDecoder(r.Body).Decode(in)
 			if err != nil {
+				core.Err(err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
