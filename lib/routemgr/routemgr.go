@@ -127,6 +127,9 @@ func IfErr(w http.ResponseWriter, err error) bool {
 func SimpleQueueHandle[TIN any](h func(c context.Context, in TIN) error) {
 	Handle("/cmd", http.MethodPost, model.PERM_ALL, func(ctx context.Context, in TIN) (out interface{}, err error) {
 		err = h(ctx, in)
+		if err != nil {
+			core.Err(err)
+		}
 		return
 	})
 }
