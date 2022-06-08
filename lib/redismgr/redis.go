@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/digitalcircle-com-br/foundation/lib/core"
-	"github.com/go-redis/redis/v8"
 	libredis "github.com/go-redis/redis/v8"
 )
 
@@ -74,21 +73,21 @@ func GetI(k string, i ...interface{}) (int64, error) {
 	defer cancel()
 	cmd := Cli().Get(ctx, fmt.Sprintf(k, i...))
 	if cmd.Err() != nil {
-		return "", cmd.Err()
+		return 0, cmd.Err()
 	}
 	str, err := cmd.Result()
 	if err != nil {
 		return 0, err
 	}
-	i, err := strconv.ParseInt(str, 64, 0)
-	return i, err
+	ret, err := strconv.ParseInt(str, 10, 64)
+	return ret, err
 }
 
 func GetJson(k string, o interface{}, i ...interface{}) error {
 	ctx, cancel := core.Ctx()
 	defer cancel()
 	cmd := Cli().Get(ctx, fmt.Sprintf(k, i...))
-	if cmd.Err() != nil && cmd.Err() != redis.Nil {
+	if cmd.Err() != nil && cmd.Err() != libredis.Nil {
 		return cmd.Err()
 	}
 	str, _ := cmd.Result()
