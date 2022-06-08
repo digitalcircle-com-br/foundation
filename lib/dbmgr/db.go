@@ -78,7 +78,9 @@ func DBN(n string) (ret *gorm.DB, err error) {
 		ret, lerr = gorm.Open(postgres.New(postgres.Config{
 			DSN:                  dsn,
 			PreferSimpleProtocol: true, // disables implicit prepared statement usage
-		}), &gorm.Config{})
+		}), &gorm.Config{
+			DisableForeignKeyConstraintWhenMigrating: true,
+		})
 
 		if lerr != nil {
 			if strings.Contains(lerr.Error(), "database") && strings.Contains(lerr.Error(), "does not exist") {
