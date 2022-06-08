@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/digitalcircle-com-br/foundation/lib/core"
 	"github.com/go-redis/redis/v8"
@@ -68,6 +69,20 @@ func Get(k string, i ...interface{}) (string, error) {
 	}
 	return cmd.Result()
 }
+func GetI(k string, i ...interface{}) (int64, error) {
+	ctx, cancel := core.Ctx()
+	defer cancel()
+	cmd := Cli().Get(ctx, fmt.Sprintf(k, i...))
+	if cmd.Err() != nil {
+		return "", cmd.Err()
+	}
+	str, err := cmd.Result()
+	if err != nil {
+		return 0, err
+	}
+	i, err := strconv.ParseInt(str, 64, 0)
+	return i, err
+}
 
 func GetJson(k string, o interface{}, i ...interface{}) error {
 	ctx, cancel := core.Ctx()
@@ -130,4 +145,16 @@ func PGet(p string) (map[string]string, error) {
 		ret[k] = v
 	}
 	return ret, nil
+}
+
+func Incr(p string) (int64, error) {
+	ctx, cancel := core.Ctx()
+	defer cancel()
+	return Cli().Incr(ctx, p).Result()
+}
+
+func Decr(p string) (int64, error) {
+	ctx, cancel := core.Ctx()
+	defer cancel()
+	return Cli().Decr(ctx, p).Result()
 }
