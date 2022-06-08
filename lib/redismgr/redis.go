@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/digitalcircle-com-br/foundation/lib/core"
 	libredis "github.com/go-redis/redis/v8"
@@ -156,4 +157,14 @@ func Decr(p string) (int64, error) {
 	ctx, cancel := core.Ctx()
 	defer cancel()
 	return Cli().Decr(ctx, p).Result()
+}
+
+func Expire(p string, to time.Duration) (bool, error) {
+	ctx, cancel := core.Ctx()
+	defer cancel()
+	return Cli().Expire(ctx, p, to).Result()
+}
+
+func ExpireS(p string, to int) (bool, error) {
+	return Expire(p, time.Second*time.Duration(to))
 }
