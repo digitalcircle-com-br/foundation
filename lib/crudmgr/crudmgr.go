@@ -18,10 +18,12 @@ import (
 )
 
 const (
-	OP_C = "C"
-	OP_R = "R"
-	OP_U = "U"
-	OP_D = "D"
+	OP_C  = "C"
+	OP_R  = "R"
+	OP_U  = "U"
+	OP_D  = "D"
+	OP_AA = "AA"
+	OP_AD = "AD"
 )
 
 type CrudOpts struct {
@@ -36,6 +38,11 @@ type CrudOpts struct {
 	PageSize     int           `json:"pagesize"`     // Offset for selected records
 	Page         int           `json:"page"`
 
+	AssociationTable  string `json:"association_table"`
+	AssociationFieldA string `json:"association_field_a"`
+	AssociationFieldB string `json:"association_field_b"`
+	AssociationIDA    uint   `json:"association_id_a"`
+	AssociationIDB    uint   `json:"association_id_b"`
 	//dataObj model.VO
 }
 
@@ -114,6 +121,29 @@ func Delete(opts *CrudOpts) (interface{}, error) {
 	return ret, tx.Error
 }
 
+func AssociationAssociate(opts *CrudOpts) (interface{}, error) {
+	db, err := dbmgr.DBN(opts.Db)
+	if err != nil {
+		return nil, err
+	}
+	err = db.Exec(fmt.Sprintf("insert into \"%s\"(\"%s\",\"%s\") values (?,?)",
+		opts.AssociationTable,
+		opts.AssociationFieldA,
+		opts.AssociationFieldB), opts.AssociationIDA, opts.AssociationIDB).Error
+	return nil, err
+}
+func AssociationDissociate(opts *CrudOpts) (interface{}, error) {
+	db, err := dbmgr.DBN(opts.Db)
+	if err != nil {
+		return nil, err
+	}
+	err = db.Exec(fmt.Sprintf("delete from into \"%s\" where \"%s\" = ? and \"%s\" = ?",
+		opts.AssociationTable,
+		opts.AssociationFieldA,
+		opts.AssociationFieldB), opts.AssociationIDA, opts.AssociationIDB).Error
+	return nil, err
+}
+
 func Handle(a interface{}) error {
 	tp := reflect.TypeOf(a).Elem()
 	db, err := dbmgr.DB()
@@ -178,6 +208,10 @@ func Handle(a interface{}) error {
 				ret, err = Update(opts)
 			case OP_D:
 				ret, err = Delete(opts)
+			case OP_AA:
+				ret, err = AssociationAssociate(opts)
+			case OP_AD:
+				ret, err = AssociationDissociate(opts)
 			default:
 				http.Error(w, "Unknown op: "+opts.Op, http.StatusBadRequest)
 				return nil
