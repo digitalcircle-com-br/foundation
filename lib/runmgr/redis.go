@@ -55,7 +55,7 @@ func qserveOnceHttp(ctx context.Context, q string, m *mux.Router) error {
 	return err
 }
 
-func RunA() context.CancelFunc {
+func RunRedis() context.CancelFunc {
 	ctx, cancel := context.WithCancel(context.Background())
 	shouldRun := true
 	go func() {

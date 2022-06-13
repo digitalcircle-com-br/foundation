@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/digitalcircle-com-br/foundation/lib/core"
 	"github.com/digitalcircle-com-br/foundation/lib/model"
@@ -107,13 +108,24 @@ func Handle[TIN, TOUT any](hpath string, method string, perm model.PermDef, f fu
 
 func HandleHttp(hpath string, method string, perm model.PermDef, f func(w http.ResponseWriter, r *http.Request) error) {
 	core.Log("Adding handler: %s:%s[%s]", method, hpath, perm)
-	Router().Name(string(perm)).Methods(method).PathPrefix(hpath).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		err := f(w, r)
-		if err != nil {
-			core.Err(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	})
+	switch {
+	case strings.HasSuffix(hpath, "/"):
+		Router().Name(string(perm)).Methods(method).PathPrefix(hpath).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			err := f(w, r)
+			if err != nil {
+				core.Err(err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+		})
+	default:
+		Router().Name(string(perm)).Methods(method).Path(hpath).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			err := f(w, r)
+			if err != nil {
+				core.Err(err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+		})
+	}
 }
 
 func IfErr(w http.ResponseWriter, err error) bool {

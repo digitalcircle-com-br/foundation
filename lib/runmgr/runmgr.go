@@ -52,6 +52,10 @@ func RunS() context.CancelFunc {
 	//return nil
 }
 
+func RunA() error {
+	return RunNats()
+}
+
 // func Router() *mux.Router {
 // 	return asynchttp.Router()
 // }

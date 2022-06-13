@@ -22,6 +22,9 @@ product-gateway:
 product-auth:
 	$(eval PRODUCT := auth)
 
+product-authmgr:
+	$(eval PRODUCT := authmgr)
+
 product-static:
 	$(eval PRODUCT := static)
 

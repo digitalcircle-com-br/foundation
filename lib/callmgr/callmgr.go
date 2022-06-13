@@ -1,101 +1,30 @@
 package callmgr
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"net/http"
-	"strings"
-	"time"
-
-	"github.com/digitalcircle-com-br/foundation/lib/core"
-	"github.com/digitalcircle-com-br/foundation/lib/redismgr"
-	"github.com/google/uuid"
 )
 
+type Caller interface {
+	Do(q string, in *http.Request) (out *http.Response, err error)
+	Enc(q string, in *http.Request) (err error)
+}
+
+var caller = new(NatsCaller)
+
 func Do(in *http.Request) (out *http.Response, err error) {
-	// rediscli := redismgr.Cli()
-	// id := uuid.NewString()
-
-	// in.Header.Set("X-RETURN-QID", id)
-
-	// buf := bytes.Buffer{}
-	// in.Write(&buf)
-
-	// context, cancel := core.Ctx()
-
-	// defer cancel()
-
-	// err = rediscli.LPush(context, q, buf.Bytes()).Err()
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// cmdret := rediscli.BRPop(context, time.Second*30, id)
-	// if cmdret.Err() != nil {
-	// 	return nil, cmdret.Err()
-	// }
-	// strs, err := cmdret.Result()
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// out, err = http.ReadResponse(bufio.NewReader(strings.NewReader(strs[1])), in)
 	// return
 	panic("implement me")
-	return nil, nil
-
 }
 
 func DoQ(q string, in *http.Request) (out *http.Response, err error) {
-	rediscli := redismgr.Cli()
-	id := uuid.NewString()
-
-	in.Header.Set("X-RETURN-QID", id)
-
-	buf := bytes.Buffer{}
-	in.Write(&buf)
-
-	context, cancel := core.Ctx()
-
-	defer cancel()
-
-	err = rediscli.LPush(context, q, buf.Bytes()).Err()
-	if err != nil {
-		return nil, err
-	}
-
-	cmdret := rediscli.BRPop(context, time.Second*30, id)
-	if cmdret.Err() != nil {
-		return nil, cmdret.Err()
-	}
-	strs, err := cmdret.Result()
-	if err != nil {
-		return nil, err
-	}
-
-	out, err = http.ReadResponse(bufio.NewReader(strings.NewReader(strs[1])), in)
-	return
+	return caller.DoQ(q, in)
 
 }
 
 func EncQ(q string, in *http.Request) (err error) {
-	rediscli := redismgr.Cli()
-
-	buf := bytes.Buffer{}
-	in.Write(&buf)
-
-	context, cancel := core.Ctx()
-
-	defer cancel()
-
-	err = rediscli.LPush(context, q, buf.Bytes()).Err()
-	if err != nil {
-		return err
-	}
-
-	return
-
+	return caller.EncQ(q, in)
 }
 
 func SimpleEncQ(q string, i interface{}) error {
