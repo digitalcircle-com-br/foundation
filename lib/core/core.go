@@ -64,8 +64,10 @@ func Log(s string, p ...interface{}) {
 }
 
 func Warn(s string, p ...interface{}) {
-
+	// bs := debug.Stack()
+	// log.Printf(fmt.Sprintf("WARN [%s] - %s\n\t%s", svcName, s, string(bs)), p...)
 	log.Printf(fmt.Sprintf("WARN [%s] - %s", svcName, s), p...)
+
 }
 
 func Debug(s string, p ...interface{}) {

@@ -43,9 +43,11 @@ func RunNats() error {
 			return
 		}
 
-		err = natsmgr.Pub(m.Reply, buf.Bytes())
-		if err != nil {
-			core.Err(err)
+		if m.Reply != "" {
+			err = natsmgr.Pub(m.Reply, buf.Bytes())
+			if err != nil {
+				core.Err(err)
+			}
 		}
 
 	})
