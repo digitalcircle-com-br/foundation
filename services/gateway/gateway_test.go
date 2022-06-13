@@ -104,3 +104,11 @@ func TestConfigKeyA(t *testing.T) {
 	log.Printf("%#v", r)
 	assert.NoError(t, err)
 }
+
+func TestAppRedir(t *testing.T) {
+	r, err := http.NewRequest(http.MethodPost, "http://host/app/xpto/a/b/c.txt", nil)
+	assert.NoError(t, err)
+	_, err = gateway.CreateReverseProxyCall(r, "")
+	assert.NoError(t, err)
+	log.Printf("new URL: %s", r.URL.String())
+}

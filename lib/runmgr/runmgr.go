@@ -2,10 +2,11 @@ package runmgr
 
 import (
 	"bytes"
-	"context"
 	"net/http"
+	"time"
 
 	"github.com/digitalcircle-com-br/foundation/lib/core"
+	"github.com/digitalcircle-com-br/foundation/lib/routemgr"
 )
 
 func Init(s string) {
@@ -47,13 +48,22 @@ func (i *InMemResponseWriter) Bytes() []byte {
 	return i.b.Bytes()
 }
 
-func RunS() context.CancelFunc {
-	panic("implement me")
-	//return nil
+func RunS() error {
+	return http.ListenAndServe(":8080", routemgr.Router())
 }
 
 func RunA() error {
 	return RunNats()
+}
+
+func RunABlock() error {
+	err := RunNats()
+	if err != nil {
+		return err
+	}
+	for {
+		time.Sleep(time.Minute)
+	}
 }
 
 // func Router() *mux.Router {

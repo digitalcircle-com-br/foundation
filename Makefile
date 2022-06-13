@@ -28,6 +28,9 @@ product-authmgr:
 product-static:
 	$(eval PRODUCT := static)
 
+product-config:
+	$(eval PRODUCT := config)
+
 docker-build:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o deploy/$(PRODUCT)/main \
 	-ldflags "-X github.com/digitalcircle-com-br/buildinfo.Ver=$(GIT_COMMIT) -X github.com/digitalcircle-com-br/buildinfo.BuildDate=$(DT) -X github.com/digitalcircle-com-br/buildinfo.BuildUser=$(ME) -X github.com/digitalcircle-com-br/buildinfo.BuildHost=$(HOST) -X github.com/digitalcircle-com-br/buildinfo.Product=$(PRODUCT)" \
@@ -49,5 +52,8 @@ docker-build-push: docker-build-product docker-push
 img-gateway: product-gateway docker-build docker-push
 
 img-auth: product-auth docker-build docker-push
+
+img-config: product-config docker-build docker-push
+
 
 img-static: product-static docker-build docker-push

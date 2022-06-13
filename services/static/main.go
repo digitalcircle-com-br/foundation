@@ -66,8 +66,8 @@ func Run() error {
 	})
 
 	routemgr.Router().PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fname:=strings.Split(r.URL.Path, "?")[0]
-		
+		fname := strings.Split(r.URL.Path, "?")[0]
+
 		if fname == "/" || fname == "" {
 			fname = "/index.html"
 		}
@@ -82,6 +82,5 @@ func Run() error {
 		w.Header().Add("content-type", mimetype)
 		w.Write(bs)
 	})
-	runmgr.RunA()
-	return nil
+	return runmgr.RunS()
 }

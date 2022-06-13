@@ -13,9 +13,10 @@ type Caller interface {
 
 var caller = new(NatsCaller)
 
+var cli http.Client
+
 func Do(in *http.Request) (out *http.Response, err error) {
-	// return
-	panic("implement me")
+	return cli.Do(in)
 }
 
 func DoQ(q string, in *http.Request) (out *http.Response, err error) {

@@ -8,6 +8,7 @@ import (
 	"github.com/digitalcircle-com-br/foundation/lib/cfgmgr"
 	"github.com/digitalcircle-com-br/foundation/lib/core"
 	"github.com/digitalcircle-com-br/foundation/lib/redismgr"
+	"gopkg.in/yaml.v3"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -50,14 +51,17 @@ func DBN(n string) (ret *gorm.DB, err error) {
 			dsns = make(map[string]string)
 			dsns["default"] = "host=postgres user=postgres password=postgres dbname=${DBNAME}"
 		}
-		chok, _, cherr := cfgmgr.UpdateOnChange("dsn", &dsns)
+
 		go func() {
-			select {
-			case <-chok:
-				core.Log("Updated dsn config")
-			case err := <-cherr:
-				core.Log("Error updating dsn config: %s", err.Error())
+			chcfg := cfgmgr.NotifyChange("dsn")
+			for {
+				s := <-chcfg
+				err = yaml.NewDecoder(strings.NewReader(s)).Decode(&dsns)
+				if err != nil {
+					core.Err(err)
+				}
 			}
+
 		}()
 	}
 	ret, ok := loadDb(n)

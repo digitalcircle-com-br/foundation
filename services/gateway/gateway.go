@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -55,6 +56,34 @@ func CreateRedirectabledRequest(r *http.Request) (string, error) {
 	}
 	r.URL = nurlo
 	return q, nil
+
+}
+
+func CreateReverseProxyCall(r *http.Request, host string) (*http.Request, error) {
+	urlpath := r.URL.Path
+	urlpath = strings.Split(urlpath, "?")[0]
+	urlparts := strings.Split(urlpath, "/")
+
+	var nurl string
+	switch {
+	case host == "":
+		if len(urlparts) < 3 {
+			return nil, errors.New("path too short - should be at least 3")
+		}
+		host = urlparts[2]
+		nurl = "http://" + host + ":8080/" + strings.Join(urlparts[3:], "/")
+	default:
+		nurl = "http://" + host + ":8080" + strings.Join(urlparts, "/")
+	}
+
+	nurlo, err := url.Parse(nurl)
+	//nurlo.Host = r.URL.Host
+	if err != nil {
+		return nil, err
+	}
+	r.URL = nurlo
+	r.RequestURI = ""
+	return r, nil
 
 }
 
@@ -140,15 +169,16 @@ func onChange() {
 
 	router.PathPrefix("/app/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		originalUrl := r.URL.String()
-		q, err := CreateRedirectabledRequest(r)
+		r, err := CreateReverseProxyCall(r, "")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			core.Err(err)
 			return
 		}
 
-		core.Log("Routing: %s to %s => %s", originalUrl, q, r.URL.String())
-		res, err := callmgr.DoQ(q, r)
+		core.Log("Routing: %s  => %s (%s)", originalUrl, r.URL.String(), r.RequestURI)
+
+		res, err := callmgr.Do(r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			core.Err(err)
@@ -184,10 +214,16 @@ func onChange() {
 
 	router.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		originalUrl := r.URL.String()
-		q := "static"
+		r, err := CreateReverseProxyCall(r, "cli")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			core.Err(err)
+			return
+		}
 
-		core.Log("Routing: %s to %s:%s", originalUrl, q, r.URL.String())
-		res, err := callmgr.DoQ(q, r)
+		core.Log("Routing: %s  => %s (%s)", originalUrl, r.URL.String(), r.RequestURI)
+
+		res, err := callmgr.Do(r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			core.Err(err)
@@ -209,16 +245,15 @@ func Prepare() error {
 	go func() {
 		err := cfgmgr.Load("routes", Cfg)
 		if err != nil && err != redis.Nil {
-			panic(err)
+			core.Warn("Error getting configs: %sUsing std config.", err.Error())
 		}
-
-		chChange, _, chErr := cfgmgr.UpdateOnChange("routes", Cfg)
-
+		onChange()
+		ch := cfgmgr.NotifyChange("routes")
 		for {
-			select {
-			case <-chChange:
-				onChange()
-			case err := <-chErr:
+			<-ch
+			err = cfgmgr.Load("routes", Cfg)
+			onChange()
+			if err != nil {
 				core.Err(err)
 			}
 

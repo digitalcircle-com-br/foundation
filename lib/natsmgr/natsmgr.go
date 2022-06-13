@@ -13,7 +13,7 @@ const Url = "nats://nats:4222"
 func Sub(q string, h func(m *nats.Msg)) error {
 	var err error
 	if nc == nil {
-		nc, err = nats.Connect(nats.DefaultURL)
+		nc, err = nats.Connect(Url)
 		if err != nil {
 			return err
 		}
@@ -25,12 +25,24 @@ func Sub(q string, h func(m *nats.Msg)) error {
 func Pub(q string, bs []byte) error {
 	var err error
 	if nc == nil {
-		nc, err = nats.Connect(nats.DefaultURL)
+		nc, err = nats.Connect(Url)
 		if err != nil {
 			return err
 		}
 	}
 	err = nc.Publish(q, bs)
+	return err
+}
+
+func SubQ(q string, h func(m *nats.Msg)) error {
+	var err error
+	if nc == nil {
+		nc, err = nats.Connect(Url)
+		if err != nil {
+			return err
+		}
+	}
+	_, err = nc.QueueSubscribe(q, "queue."+q, h)
 	return err
 }
 

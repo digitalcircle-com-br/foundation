@@ -181,8 +181,6 @@ func Run() error {
 	routemgr.Handle("/logout", http.MethodGet, model.PERM_AUTH, Service.Logout)
 	routemgr.Handle("/check", http.MethodGet, model.PERM_AUTH, Service.Check)
 
-	
-
 	routemgr.Router().Use(func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			core.Debug("Got: %s", r.URL.String())
@@ -190,6 +188,6 @@ func Run() error {
 		})
 	})
 
-	runmgr.RunA()
-	return nil
+	err = runmgr.RunABlock()
+	return err
 }

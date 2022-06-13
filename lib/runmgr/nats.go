@@ -13,7 +13,7 @@ import (
 )
 
 func RunNats() error {
-	return natsmgr.Sub(core.SvcName(), func(m *nats.Msg) {
+	return natsmgr.SubQ(core.SvcName(), func(m *nats.Msg) {
 
 		wrt := NewInMemResponseWriter()
 
