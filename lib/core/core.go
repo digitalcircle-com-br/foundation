@@ -16,6 +16,10 @@ import (
 	"github.com/google/uuid"
 )
 
+func init() {
+	Log("Initiating foundation v0.0.7")
+}
+
 func Ctx() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), time.Second*120)
 }
@@ -25,7 +29,7 @@ func IsDocker() bool {
 	return err == nil
 }
 
-var svcName = ""
+var svcName = "foundation"
 var svcId = NewUUID()
 
 var sigCh = make(chan os.Signal)

@@ -2,6 +2,7 @@ package dbmgr
 
 import (
 	"fmt"
+	"runtime/debug"
 	"strings"
 	"sync"
 
@@ -44,6 +45,11 @@ func DBMaster() (ret *gorm.DB, err error) {
 var dsns map[string]string
 
 func DBN(n string) (ret *gorm.DB, err error) {
+	defer func() {
+		if err != nil {
+			core.Warn("Error obtaining db: %v\n%s", err, string(debug.Stack()))
+		}
+	}()
 	if dsns == nil {
 		err = cfgmgr.Load("dsn", &dsns)
 		if err != nil {
