@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+
+	"github.com/digitalcircle-com-br/foundation/lib/core"
 )
 
 type Caller interface {
@@ -20,17 +22,26 @@ func Do(in *http.Request) (out *http.Response, err error) {
 }
 
 func DoQ(q string, in *http.Request) (out *http.Response, err error) {
-	return caller.DoQ(q, in)
+	out, err = caller.DoQ(q, in)
+	if err != nil {
+		core.Warn("Error enqueuing data at callmgr.DoQ: %s => %v", q, err)
+	}
+	return
 
 }
 
 func EncQ(q string, in *http.Request) (err error) {
-	return caller.EncQ(q, in)
+	err = caller.EncQ(q, in)
+	if err != nil {
+		core.Warn("Error enqueuing data at callmgr.EnqQ: %s => %v", q, err)
+	}
+	return
 }
 
 func SimpleEncQ(q string, i interface{}) error {
 	bs, err := json.Marshal(i)
 	if err != nil {
+		core.Warn("Error marshalling data for enqueueing at callmgr.SimpleEncQ: %s => %v", q, err)
 		return err
 	}
 	req, err := http.NewRequest(http.MethodPost, "/cmd", bytes.NewReader(bs))

@@ -17,7 +17,7 @@ import (
 )
 
 func init() {
-	Log("Initiating foundation v0.0.7")
+	Log("Initiating foundation v0.0.8")
 }
 
 func Ctx() (context.Context, context.CancelFunc) {
