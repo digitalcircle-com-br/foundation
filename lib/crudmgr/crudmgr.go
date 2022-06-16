@@ -43,6 +43,8 @@ type CrudOpts struct {
 	AssociationFieldB string `json:"association_field_b"`
 	AssociationIDA    uint   `json:"association_id_a"`
 	AssociationIDB    uint   `json:"association_id_b"`
+	Debug             bool   `json:"debug"`
+	AutoPreload       bool   `json:"auto_preload"`
 	//dataObj model.VO
 }
 
@@ -56,6 +58,11 @@ func Retrieve(tp reflect.Type, opts *CrudOpts) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if opts.Debug {
+		db = db.Debug()
+	}
+
 	if opts.PageSize == 0 || opts.PageSize > 1000 {
 		opts.PageSize = 1000
 	}
@@ -69,15 +76,23 @@ func Retrieve(tp reflect.Type, opts *CrudOpts) (interface{}, error) {
 	ret := reflect.MakeSlice(reflect.SliceOf(tp), 0, opts.PageSize).Interface()
 	//ret := make([]T, 0)
 	tx := db.Table(opts.Tb)
+
+	for _, assoc := range opts.Associations {
+		core.Debug("Loading association: %s", assoc)
+		tx = tx.Preload(assoc)
+	}
+
 	switch {
 	case opts.Where != nil && len(opts.Where) == 1:
 		tx = tx.Where(opts.Where)
 	case opts.Where != nil && len(opts.Where) > 1:
 		tx = tx.Where(opts.Where[0], opts.Where[1:]...)
 	}
-	for _, assoc := range opts.Associations {
-		tx = tx.Preload(assoc)
+
+	if opts.AutoPreload {
+		tx = tx.Set("gorm:auto_preload", true)
 	}
+
 	err = tx.Limit(opts.PageSize).Offset(offset).Find(&ret).Error
 	return CrudResponse{Data: ret}, err
 }
@@ -86,6 +101,10 @@ func Create(opts *CrudOpts) (interface{}, error) {
 	db, err := dbmgr.DBN(opts.Db)
 	if err != nil {
 		return nil, err
+	}
+
+	if opts.Debug {
+		db = db.Debug()
 	}
 
 	err = db.Table(opts.Tb).Create(opts.Data).Error
@@ -98,6 +117,11 @@ func Update(opts *CrudOpts) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if opts.Debug {
+		db = db.Debug()
+	}
+
 	tx := db.Table(opts.Tb).Where("id = ?", opts.ID).Updates(opts.Data)
 	ret := CrudResponse{
 		Data:         nil,
@@ -111,6 +135,11 @@ func Delete(opts *CrudOpts) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if opts.Debug {
+		db = db.Debug()
+	}
+
 	tx := db.Exec(fmt.Sprintf("delete from %s where id = ?", opts.Tb), opts.ID)
 
 	ret := CrudResponse{
