@@ -3,7 +3,6 @@ package runmgr
 import (
 	"bytes"
 	"net/http"
-	"time"
 
 	"github.com/digitalcircle-com-br/foundation/lib/core"
 	"github.com/digitalcircle-com-br/foundation/lib/routemgr"
@@ -52,18 +51,8 @@ func RunS() error {
 	return http.ListenAndServe(":8080", routemgr.Router())
 }
 
-func RunA() error {
-	return RunNats()
-}
-
 func RunABlock() error {
-	err := RunNats()
-	if err != nil {
-		return err
-	}
-	for {
-		time.Sleep(time.Minute)
-	}
+	return RunRedis()
 }
 
 // func Router() *mux.Router {

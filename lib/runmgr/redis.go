@@ -17,7 +17,7 @@ import (
 
 func qserveOnceHttp(ctx context.Context, q string, m *mux.Router) error {
 	rediscli := redismgr.Cli()
-	cmd := rediscli.BRPop(ctx, time.Second*0, core.SvcName())
+	cmd := rediscli.BRPop(ctx, time.Second*0, "queue:"+core.SvcName())
 	if cmd.Err() != nil {
 		return cmd.Err()
 	}
@@ -48,27 +48,21 @@ func qserveOnceHttp(ctx context.Context, q string, m *mux.Router) error {
 	}
 	qid := req.Header.Get("X-RETURN-QID")
 	if qid != "" {
-		err = rediscli.LPush(ctx, qid, buf.Bytes()).Err()
+		err = rediscli.LPush(ctx, "queue:"+qid, buf.Bytes()).Err()
 		rediscli.Expire(ctx, qid, time.Minute)
 	}
 
 	return err
 }
 
-func RunRedis() context.CancelFunc {
-	ctx, cancel := context.WithCancel(context.Background())
-	shouldRun := true
-	go func() {
-		<-ctx.Done()
-		shouldRun = false
-	}()
+func RunRedis() error {
 
-	for shouldRun {
-		err := qserveOnceHttp(ctx, core.SvcName(), routemgr.Router())
+	for {
+		err := qserveOnceHttp(context.Background(), core.SvcName(), routemgr.Router())
 		if err != nil {
 			core.Err(err)
 			time.Sleep(time.Second)
 		}
 	}
-	return cancel
+	return nil
 }

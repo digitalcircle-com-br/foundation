@@ -7,7 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"reflect"
+	"runtime/debug"
 
 	"github.com/digitalcircle-com-br/foundation/lib/core"
 	"github.com/digitalcircle-com-br/foundation/lib/ctxmgr"
@@ -53,14 +53,10 @@ type CrudResponse struct {
 	RowsAffected int64       `json:"rowsaffected"`
 }
 
-func Retrieve(tp reflect.Type, opts *CrudOpts) (interface{}, error) {
+func Retrieve[T any](opts *CrudOpts) (interface{}, error) {
 	db, err := dbmgr.DBN(opts.Db)
 	if err != nil {
 		return nil, err
-	}
-
-	if opts.Debug {
-		db = db.Debug()
 	}
 
 	if opts.PageSize == 0 || opts.PageSize > 1000 {
@@ -73,13 +69,13 @@ func Retrieve(tp reflect.Type, opts *CrudOpts) (interface{}, error) {
 
 	offset := (opts.Page - 1) * opts.PageSize
 
-	ret := reflect.MakeSlice(reflect.SliceOf(tp), 0, opts.PageSize).Interface()
+	var ret []T //:= make([]T, 0) //reflect.MakeSlice(reflect.SliceOf(tp), 0, opts.PageSize).Interface()
 	//ret := make([]T, 0)
-	tx := db.Table(opts.Tb)
+	model := new(T)
+	tx := db.Model(model)
 
-	for _, assoc := range opts.Associations {
-		core.Debug("Loading association: %s", assoc)
-		tx = tx.Preload(assoc)
+	if opts.Debug {
+		tx = tx.Debug()
 	}
 
 	switch {
@@ -89,11 +85,21 @@ func Retrieve(tp reflect.Type, opts *CrudOpts) (interface{}, error) {
 		tx = tx.Where(opts.Where[0], opts.Where[1:]...)
 	}
 
-	if opts.AutoPreload {
+	switch {
+
+	case opts.AutoPreload:
 		tx = tx.Set("gorm:auto_preload", true)
+
+	default:
+		for _, assoc := range opts.Associations {
+			core.Debug("Loading association: [%s]", assoc)
+			tx = tx.Preload(assoc)
+		}
+
 	}
 
 	err = tx.Limit(opts.PageSize).Offset(offset).Find(&ret).Error
+
 	return CrudResponse{Data: ret}, err
 }
 
@@ -172,9 +178,14 @@ func AssociationDissociate(opts *CrudOpts) (interface{}, error) {
 		opts.AssociationFieldB), opts.AssociationIDA, opts.AssociationIDB).Error
 	return nil, err
 }
-
-func Handle(a interface{}) error {
-	tp := reflect.TypeOf(a).Elem()
+func MustHandle[T any](a T) {
+	err := Handle(a)
+	if err != nil {
+		panic(err)
+	}
+}
+func Handle[T any](a T) error {
+	//tp := reflect.TypeOf(a).Elem()
 	db, err := dbmgr.DB()
 	if err != nil {
 		return err
@@ -189,6 +200,15 @@ func Handle(a interface{}) error {
 		http.MethodPost,
 		model.PERM_AUTH,
 		func(w http.ResponseWriter, r *http.Request) error {
+			defer func() {
+				r.Body.Close()
+				r := recover()
+				if r != nil {
+					msg := fmt.Sprintf("Recovering from: %v\n%s ", r, string(debug.Stack()))
+					core.Warn(msg)
+					http.Error(w, msg, http.StatusInternalServerError)
+				}
+			}()
 			sess := ctxmgr.Session(r.Context())
 			if sess == nil {
 				http.Error(w, "unauthorized", http.StatusUnauthorized)
@@ -199,7 +219,6 @@ func Handle(a interface{}) error {
 
 			buf := &bytes.Buffer{}
 			io.Copy(buf, r.Body)
-			defer r.Body.Close()
 
 			err := json.Unmarshal(buf.Bytes(), opts)
 			if err != nil {
@@ -215,7 +234,8 @@ func Handle(a interface{}) error {
 				return nil
 			}
 
-			typeData := reflect.New(tp).Interface()
+			//typeData := reflect.New(tp).Interface()
+			typeData := new(T)
 			bs, _ := json.Marshal(opts.Data)
 			json.Unmarshal(bs, typeData)
 			opts.Data = typeData
@@ -232,7 +252,7 @@ func Handle(a interface{}) error {
 			case OP_C:
 				ret, err = Create(opts)
 			case OP_R:
-				ret, err = Retrieve(tp, opts)
+				ret, err = Retrieve[T](opts)
 			case OP_U:
 				ret, err = Update(opts)
 			case OP_D:

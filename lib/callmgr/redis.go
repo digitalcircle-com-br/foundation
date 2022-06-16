@@ -27,12 +27,12 @@ func (r *RedisCaller) DoQ(q string, in *http.Request) (out *http.Response, err e
 
 	defer cancel()
 
-	err = rediscli.LPush(context, q, buf.Bytes()).Err()
+	err = rediscli.LPush(context, "queue:"+q, buf.Bytes()).Err()
 	if err != nil {
 		return nil, err
 	}
 
-	cmdret := rediscli.BRPop(context, time.Second*30, id)
+	cmdret := rediscli.BRPop(context, time.Second*30, "queue:"+id)
 	if cmdret.Err() != nil {
 		return nil, cmdret.Err()
 	}
@@ -56,7 +56,7 @@ func (r *RedisCaller) EncQ(q string, in *http.Request) (err error) {
 
 	defer cancel()
 
-	err = rediscli.LPush(context, q, buf.Bytes()).Err()
+	err = rediscli.LPush(context, "queue:"+q, buf.Bytes()).Err()
 	if err != nil {
 		return err
 	}

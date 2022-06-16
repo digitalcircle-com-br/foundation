@@ -180,7 +180,7 @@ func Run() error {
 	routemgr.Router().Name("file.download").Methods(http.MethodGet).Path("download").HandlerFunc(Service.Download)
 	routemgr.Router().Name("file.list").Methods(http.MethodPost).Path("list").HandlerFunc(Service.List)
 	routemgr.Router().Name("file.del").Methods(http.MethodPost).Path("del").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	runmgr.RunA()
+	runmgr.RunABlock()
 
 	return nil
 

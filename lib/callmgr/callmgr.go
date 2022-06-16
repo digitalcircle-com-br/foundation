@@ -13,7 +13,7 @@ type Caller interface {
 	Enc(q string, in *http.Request) (err error)
 }
 
-var caller = new(NatsCaller)
+var caller = new(RedisCaller)
 
 var cli http.Client
 

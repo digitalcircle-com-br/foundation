@@ -12,6 +12,6 @@ var Service = new(service)
 
 func Run() error {
 	core.Init("crud")
-	runmgr.RunA()
+	runmgr.RunABlock()
 	return nil
 }

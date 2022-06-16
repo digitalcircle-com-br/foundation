@@ -16,5 +16,5 @@ func Run() {
 		return nil
 	})
 
-	runmgr.RunA()
+	runmgr.RunABlock()
 }

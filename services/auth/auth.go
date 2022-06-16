@@ -19,7 +19,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-var ErroNotAuthorized = errors.New("Not authorized")
+var ErroNotAuthorized = errors.New("not authorized")
 
 type service struct{}
 

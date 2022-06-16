@@ -11,7 +11,8 @@ import (
 
 	"github.com/digitalcircle-com-br/foundation/lib/core"
 	"github.com/digitalcircle-com-br/foundation/lib/model"
-	"github.com/digitalcircle-com-br/foundation/lib/natsmgr"
+	"github.com/digitalcircle-com-br/foundation/lib/redismgr"
+
 	"github.com/digitalcircle-com-br/foundation/lib/routemgr"
 	"gopkg.in/yaml.v3"
 )
@@ -76,14 +77,14 @@ func post(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 	err = os.WriteFile(filepath.Join(root, npath+".yaml"), bs, 0600)
-	natsmgr.Pub("config", []byte(npath))
+	redismgr.Pub("config", npath)
 	return err
 }
 
 func delete(w http.ResponseWriter, r *http.Request) error {
 	npath := fixPath(r)
 	err := os.Remove(filepath.Join(root, npath))
-	natsmgr.Pub("config", []byte(r.URL.Path))
+	redismgr.Pub("config", r.URL.Path)
 	return err
 }
 
