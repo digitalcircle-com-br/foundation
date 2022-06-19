@@ -4,6 +4,8 @@ import (
 	"time"
 )
 
+type PK int64
+
 type EMPTY struct{}
 
 type PermDef string
@@ -113,9 +115,9 @@ type VO interface {
 }
 
 type BaseVO struct {
-	ID uint `json:"id"`
+	ID PK `json:"id"`
 }
 
-func (b *BaseVO) GetID() uint {
-	return b.ID
-}
+// func (b *BaseVO) GetID() uint {
+// 	return b.ID
+// }
