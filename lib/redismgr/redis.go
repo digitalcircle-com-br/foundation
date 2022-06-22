@@ -24,17 +24,25 @@ func Cli() *libredis.Client {
 		if err != nil {
 			panic(err)
 		}
+		i := 1
+		for {
+			rediscli = libredis.NewClient(opts)
 
-		rediscli = libredis.NewClient(opts)
+			context, cancel := context.WithCancel(context.Background())
+			defer cancel()
 
-		context, cancel := context.WithCancel(context.Background())
-		defer cancel()
+			_, err = rediscli.Ping(context).Result()
 
-		_, err = rediscli.Ping(context).Result()
-
-		if err != nil {
-			//TODO: improve error msg
-			panic(err)
+			if err == nil {
+				return rediscli
+			} else {
+				core.Warn("could not connect to redis - will retry (%v/10)", i)
+				time.Sleep(time.Second)
+				i++
+				if i >= 10 {
+					panic(err)
+				}
+			}
 		}
 	}
 	return rediscli

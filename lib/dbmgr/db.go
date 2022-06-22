@@ -47,13 +47,13 @@ var dsns map[string]string
 func DBN(n string) (ret *gorm.DB, err error) {
 	defer func() {
 		if err != nil {
-			core.Warn("Error obtaining db: %v\n%s", err, string(debug.Stack()))
+			core.Log("Error obtaining db: %v\n%s", err, string(debug.Stack()))
 		}
 	}()
 	if dsns == nil {
 		err = cfgmgr.Load("dsn", &dsns)
 		if err != nil {
-			core.Warn("No dsn entries found using std values")
+			core.Log("No dsn entries found using std values")
 			dsns = make(map[string]string)
 			dsns["default"] = "host=postgres user=postgres password=postgres dbname=${DBNAME}"
 		}
