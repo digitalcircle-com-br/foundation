@@ -35,8 +35,13 @@ func delDb(n string) {
 	delete(dbs, n)
 }
 
+var defaultdb = "foundation"
+
+func SetDefault(s string) {
+	defaultdb = s
+}
 func DB() (ret *gorm.DB, err error) {
-	return DBN("foundation")
+	return DBN(defaultdb)
 }
 func DBMaster() (ret *gorm.DB, err error) {
 	return DBN("postgres")
