@@ -42,3 +42,14 @@ POST {{basepath}}/auth/login
     "login":"root",
     "password":"root"
 }
+
+###
+# @name TEST
+POST {{basepath}}/api/authmgr/crud/sec_users
+Content-Type: application/json
+Accept: application/json
+Cookie: SESSIONID=Zm91bmRhdGlvbi5jMWRiZmI0NC05ZTg5LTQyMmMtYWZjOS02ZjE2NmM0OTBjZjAuWEg1WTdWWXNycDhZYU9TVHl5UDBuUT09
+
+{
+    "Op":"R"
+}

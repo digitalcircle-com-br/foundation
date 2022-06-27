@@ -184,6 +184,13 @@ func MustHandle[T any](a T) {
 		panic(err)
 	}
 }
+
+var defaultTenant = ""
+
+func SetDefaultTenant(t string) {
+	defaultTenant = t
+}
+
 func Handle[T any](a T) error {
 	//tp := reflect.TypeOf(a).Elem()
 	db, err := dbmgr.DB()
@@ -241,7 +248,11 @@ func Handle[T any](a T) error {
 			opts.Data = typeData
 			//no := reflect.New(tp).Interface()
 
-			opts.Db = sess.Tenant
+			if defaultTenant == "" {
+				opts.Db = sess.Tenant
+			} else {
+				opts.Db = defaultTenant
+			}
 			log.Printf("using tb: %s", tb)
 			opts.Tb = tb
 
