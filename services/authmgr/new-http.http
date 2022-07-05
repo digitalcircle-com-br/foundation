@@ -220,3 +220,78 @@ Cookie: {{cookie}}
 	"auto_preload": true,
 	"debug": true
 }
+
+
+#########################################################################################
+#################################### Associations #######################################
+#########################################################################################
+
+# @name AssociateGroupsWithPerms
+POST {{basepath}}/api/authmgr/crud/sec_groups HTTP/1.1
+Content-Type: application/json
+Cookie: {{cookie}}
+
+{
+	"op": "AA",
+	"association_table": "sec_group_perms",
+	"association_field_a": "sec_group_id",
+	"association_field_b": "sec_perm_id",
+	"association_id_a": 1,
+	"association_id_b": 1,
+	"auto_preload": true,
+	"debug": true
+}
+
+###
+
+# @name DisassociateGroupsAndPerms
+POST {{basepath}}/api/authmgr/crud/sec_groups HTTP/1.1
+Content-Type: application/json
+Cookie: {{cookie}}
+
+{
+	"op": "AD",
+	"association_table": "sec_group_perms",
+	"association_field_a": "sec_group_id",
+	"association_field_b": "sec_perm_id",
+	"association_id_a": 1,
+	"association_id_b": 1,
+	"auto_preload": true,
+	"debug": true
+}
+
+###
+
+# @name AssociateUsersWithGroups
+POST {{basepath}}/api/authmgr/crud/sec_users HTTP/1.1
+Content-Type: application/json
+Cookie: {{cookie}}
+
+{
+	"op": "AA",
+	"association_table": "sec_user_groups",
+	"association_field_a": "sec_user_id",
+	"association_field_b": "sec_group_id",
+	"association_id_a": 1,
+	"association_id_b": 2,
+	"auto_preload": true,
+	"debug": true
+}
+
+### 
+
+# @name DisassociateUsersAndGroups
+POST {{basepath}}/api/authmgr/crud/sec_users HTTP/1.1
+Content-Type: application/json
+Cookie: {{cookie}}
+
+{
+	"op": "AD",
+	"association_table": "sec_user_groups",
+	"association_field_a": "sec_user_id",
+	"association_field_b": "sec_group_id",
+	"association_id_a": 2,
+	"association_id_b": 1,
+	"auto_preload": true,
+	"debug": true
+}
