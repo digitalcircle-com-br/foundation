@@ -1,0 +1,222 @@
+@basepath=http://localhost:8080
+@cookie=csrftoken=rUEHVKLuEcAixLjFjJfplaRC09z8xNGAci2sHVC8bh29MIFEGtQ7ep9nHRikc2Wx; sessionid=aqaf1nh02iqa20zzd1w03xof2cqqgrdf; amplitude_id_eb9e4621db21faf713ee50c637f3cf36=eyJkZXZpY2VJZCI6ImNkYmVkN2Q5LWY1NTYtNDFjMy1iNmVhLThhYTFlNDYxZTFiNlIiLCJ1c2VySWQiOm51bGwsIm9wdE91dCI6ZmFsc2UsInNlc3Npb25JZCI6MTY1NjY3NjUxNDg5NywibGFzdEV2ZW50VGltZSI6MTY1NjY3NjUxNzU5MCwiZXZlbnRJZCI6MCwiaWRlbnRpZnlJZCI6MCwic2VxdWVuY2VOdW1iZXIiOjB9; SESSIONID=Zm91bmRhdGlvbi44OTY0NzNhMy05MTIyLTQ5MDQtYjdlNS00MWRkNTI0MTAxZGMuNWk1YndBaTR6NldySlFoNmRwVmlXQT09
+
+
+#########################################################################################
+###################################### Users ############################################
+#########################################################################################
+
+# @name CreateUsers
+POST {{basepath}}/api/authmgr/crud/sec_users HTTP/1.1
+Content-Type: application/json
+Cookie: {{cookie}}
+
+{
+	"op": "C",
+	"data": {
+        "username": "Test",
+        "email": "test@test.com",
+        "tenant": "foundation",
+        "Hash": "123root",
+        "enabled": true,
+        "groups": null
+	},
+	"auto_preload": true,
+	"debug": true
+}
+
+###
+
+# @name RetrieveUsers
+POST {{basepath}}/api/authmgr/crud/sec_users HTTP/1.1
+Content-Type: application/json
+Cookie: {{cookie}}
+
+{
+	"op": "R",
+	"where": [
+		"username = ? OR email = ?",
+		"root",
+		"test@test.com"
+	],
+	"page": 1,
+	"pagesize": 5,
+	"auto_preload": true,
+	"debug": true
+}
+
+###
+
+# @name UpdateUsers
+POST {{basepath}}/api/authmgr/crud/sec_users HTTP/1.1
+Content-Type: application/json
+Cookie: {{cookie}}
+
+{
+	"op": "U",
+	"id": 6,
+	"data": {
+		"username": "Test Diff",
+		"email": "test-diff@test.com",
+		"tenant": "foundation",
+		"Hash": "123root",
+		"enabled": true,
+		"groups": null
+	},
+	"auto_preload": true,
+	"debug": true
+}
+
+### 
+
+# @name DeleteUsers
+POST {{basepath}}/api/authmgr/crud/sec_users HTTP/1.1
+Content-Type: application/json
+Cookie: {{cookie}}
+
+{
+	"op": "D",
+	"id": 6,
+	"auto_preload": true,
+	"debug": true
+}
+
+
+#########################################################################################
+###################################### Groups ###########################################
+#########################################################################################
+
+# @name CreateGroups
+POST {{basepath}}/api/authmgr/crud/sec_groups HTTP/1.1
+Content-Type: application/json
+Cookie: {{cookie}}
+
+{
+	"op": "C",
+	"data": {
+        "name": "test 3"
+	},
+	"auto_preload": true,
+	"debug": true
+}
+
+### 
+
+# @name RetrieveGroups
+POST {{basepath}}/api/authmgr/crud/sec_groups HTTP/1.1
+Content-Type: application/json
+Cookie: {{cookie}}
+
+{
+	"op": "R",
+	"where": [
+		"id < ?",
+		"50"
+	],
+	"page": 1,
+	"pagesize": 5,
+	"auto_preload": true,
+	"debug": true
+}
+
+### 
+
+# @name UpdateGroups
+POST {{basepath}}/api/authmgr/crud/sec_groups HTTP/1.1
+Content-Type: application/json
+Cookie: {{cookie}}
+
+{
+	"op": "U",
+	"id": 2,
+	"data": {
+        "name": "new group"
+	},
+	"auto_preload": true,
+	"debug": true
+}
+
+###
+
+# @name DeleteGroups
+POST {{basepath}}/api/authmgr/crud/sec_groups HTTP/1.1
+Content-Type: application/json
+Cookie: {{cookie}}
+
+{
+	"op": "D",
+	"id": 7,
+	"auto_preload": true,
+	"debug": true
+}
+
+
+#########################################################################################
+###################################### Perms ############################################
+#########################################################################################
+
+# @name CreatePerms
+POST {{basepath}}/api/authmgr/crud/sec_perms HTTP/1.1
+Content-Type: application/json
+Cookie: {{cookie}}
+
+{
+	"op": "C",
+	"data": {
+        "name": "new-perm",
+        "val": "**"
+	},
+	"auto_preload": true,
+	"debug": true
+}
+
+### 
+
+# @name RetrievePerms
+POST {{basepath}}/api/authmgr/crud/sec_perms HTTP/1.1
+Content-Type: application/json
+Cookie: {{cookie}}
+
+{
+	"op": "R",
+	"where": [
+		"id < ?",
+		"50"
+	],
+	"page": 1,
+	"pagesize": 5,
+	"auto_preload": true,
+	"debug": true
+}
+
+### 
+
+# @name UpdatePerms
+POST {{basepath}}/api/authmgr/crud/sec_perms HTTP/1.1
+Content-Type: application/json
+Cookie: {{cookie}}
+
+{
+	"op": "U",
+	"id": 5,
+	"data": {
+		"name": "new_perm",
+		"val": "*"
+	},
+	"auto_preload": true,
+	"debug": true
+}
+
+### 
+
+# @name DeletePerms
+POST {{basepath}}/api/authmgr/crud/sec_perms HTTP/1.1
+Content-Type: application/json
+Cookie: {{cookie}}
+
+{
+	"op": "D",
+	"id": 5,
+	"auto_preload": true,
+	"debug": true
+}
