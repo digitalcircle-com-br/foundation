@@ -172,7 +172,7 @@ func AssociationDissociate(opts *CrudOpts) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = db.Exec(fmt.Sprintf("delete from into \"%s\" where \"%s\" = ? and \"%s\" = ?",
+	err = db.Exec(fmt.Sprintf("delete from \"%s\" where \"%s\" = ? and \"%s\" = ?",
 		opts.AssociationTable,
 		opts.AssociationFieldA,
 		opts.AssociationFieldB), opts.AssociationIDA, opts.AssociationIDB).Error
