@@ -16,8 +16,9 @@ import (
 )
 
 type UpdatePasswordRequest struct {
-	Password        string `json:"password"`
-	ConfirmPassword string `json:"ConfirmPassword"`
+	OldPassword     string `json:"oldPassword"`
+	NewPassword     string `json:"newPassword"`
+	ConfirmPassword string `json:"confirmPassword"`
 }
 
 func UpdatePassword(ctx context.Context, request *UpdatePasswordRequest) (interface{}, error) {
@@ -33,7 +34,7 @@ func UpdatePassword(ctx context.Context, request *UpdatePasswordRequest) (interf
 		return nil, errors.New("invalid session")
 	}
 
-	if request.Password != request.ConfirmPassword {
+	if request.NewPassword != request.ConfirmPassword {
 		return nil, errors.New("password and confirm password must be the same")
 	}
 
@@ -45,7 +46,17 @@ func UpdatePassword(ctx context.Context, request *UpdatePasswordRequest) (interf
 		return nil, errors.New("user not found")
 	}
 
-	oldPasswordIsTheSame, err := hash.Check(request.Password, user.Hash)
+	oldPasswordIsCorrect, err := hash.Check(request.OldPassword, user.Hash)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !oldPasswordIsCorrect {
+		return nil, errors.New("invalid password")
+	}
+
+	oldPasswordIsTheSame, err := hash.Check(request.NewPassword, user.Hash)
 
 	if err != nil {
 		return nil, err
@@ -55,7 +66,7 @@ func UpdatePassword(ctx context.Context, request *UpdatePasswordRequest) (interf
 		return nil, errors.New("password cannot be the old password")
 	}
 
-	passwordHash, err := hash.Hash(request.Password)
+	passwordHash, err := hash.Hash(request.NewPassword)
 
 	if err != nil {
 		return nil, err
