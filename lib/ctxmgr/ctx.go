@@ -13,18 +13,19 @@ import (
 	"gorm.io/gorm"
 )
 
-
-
+//Req returns *http.Request stored on ctx under key model.CTX_REQ
 func Req(c context.Context) *http.Request {
 	raw := c.Value(model.CTX_REQ)
 	return raw.(*http.Request)
 }
 
+//Res returns http.ResponseWriter stored on ctx under key model.CTX_RES
 func Res(c context.Context) http.ResponseWriter {
 	raw := c.Value(model.CTX_RES)
 	return raw.(http.ResponseWriter)
 }
 
+//SessionID returns the session identifier of the request stored on context
 func SessionID(c context.Context) string {
 	ck, err := Req(c).Cookie(string(model.COOKIE_SESSION))
 	if err != nil {
@@ -33,6 +34,7 @@ func SessionID(c context.Context) string {
 	return ck.Value
 }
 
+//Tenant returns the tenant defined in model.Session stored on ctx
 func Tenant(c context.Context) string {
 	sess := Session(c)
 	if sess == nil {
@@ -42,6 +44,7 @@ func Tenant(c context.Context) string {
 	return sess.Tenant
 }
 
+//Db returns a *gorm.DB based on tenant queried from ctx
 func Db(c context.Context) (ret *gorm.DB, err error) {
 
 	t := Tenant(c)
@@ -52,15 +55,18 @@ func Db(c context.Context) (ret *gorm.DB, err error) {
 	return
 }
 
+//Vars returns the mux.Vars from the *http.Request stored on ctx
 func Vars(c context.Context) map[string]string {
 	return mux.Vars(Req(c))
 }
 
+//Done returns a func() stored on ctx under the key model.CTX_DONE
 func Done(c context.Context) func() {
 	raw := c.Value(model.CTX_DONE)
 	return raw.(func())
 }
 
+//Err responds the request stored on ctx with err.Error() and status http.StatusInternalServerError
 func Err(c context.Context, err error) bool {
 	if err != nil {
 		core.Err(err)
@@ -70,6 +76,7 @@ func Err(c context.Context, err error) bool {
 	return false
 }
 
+//Session returns *model.Session stored on ctx under the key model.CTX_SESSION
 func Session(c context.Context) *model.Session {
 	rawsession := c.Value(model.CTX_SESSION)
 	if rawsession != nil {
