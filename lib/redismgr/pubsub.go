@@ -12,6 +12,7 @@ type Msg struct {
 	Err     error
 }
 
+//RawSub returns a channel where raw data will be sent and a function that closes the channel
 func RawSub(ch ...string) (ret <-chan string, closefn func()) {
 	sub := Cli().Subscribe(context.Background(), ch...)
 	inret := make(chan string)
@@ -39,6 +40,7 @@ func RawSub(ch ...string) (ret <-chan string, closefn func()) {
 	return
 }
 
+//Sub returns a channel where messages will be sent and a function that closes the channel
 func Sub(ch ...string) (ret <-chan *Msg, closefn func()) {
 	sub := Cli().Subscribe(context.Background(), ch...)
 	inret := make(chan *Msg)
@@ -68,6 +70,7 @@ func Sub(ch ...string) (ret <-chan *Msg, closefn func()) {
 	return
 }
 
+//Pub publishes the message msg on the channel ch
 func Pub(ch string, msg interface{}) {
 	Cli().Publish(context.Background(), ch, msg)
 }
