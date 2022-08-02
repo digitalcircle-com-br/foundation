@@ -14,10 +14,12 @@ import (
 
 var router *mux.Router
 
+//Reset unsets *mux.Router
 func Reset() {
 	router = nil
 }
 
+//Router returns mux.Router, if it is nil, it configures one with default handlers
 func Router() *mux.Router {
 	if router == nil {
 		router = mux.NewRouter()
