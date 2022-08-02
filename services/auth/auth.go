@@ -170,17 +170,21 @@ func (s *service) Check(ctx context.Context, lr *model.EMPTY) (out bool, err err
 	return session != nil, nil
 }
 
+/*Run configures mux.Router and start listening to redis's request queue identified by the key "queue: auth" */
 func Run() error {
 	var err error
-	core.Init("auth")
-	err = Service.Setup()
+	core.Init("auth")     // Initializes global variables and logs initialization info
+	err = Service.Setup() // Creates database
 	if err != nil {
 		return err
 	}
+
+	// Add routes functions
 	routemgr.Handle("/login", http.MethodPost, model.PERM_ALL, Service.Login)
 	routemgr.Handle("/logout", http.MethodGet, model.PERM_AUTH, Service.Logout)
 	routemgr.Handle("/check", http.MethodGet, model.PERM_AUTH, Service.Check)
 
+	// Sets a middleware that logs incoming requests URL on DEBUG log mode
 	routemgr.Router().Use(func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			core.Debug("Got: %s", r.URL.String())
@@ -188,6 +192,6 @@ func Run() error {
 		})
 	})
 
-	err = runmgr.RunABlock()
+	err = runmgr.RunABlock() // Run HTTP server with routemgr.Router(), blocking execution
 	return err
 }

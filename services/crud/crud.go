@@ -10,8 +10,9 @@ type service struct {
 
 var Service = new(service)
 
+/*Run start listening to redis's request queue identified by the key "queue: core.SvcName" */
 func Run() error {
 	core.Init("crud")
-	runmgr.RunABlock()
-	return nil
+	err := runmgr.RunABlock()
+	return err
 }

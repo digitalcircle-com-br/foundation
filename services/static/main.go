@@ -16,6 +16,7 @@ import (
 	"github.com/digitalcircle-com-br/foundation/lib/runmgr"
 )
 
+//Run configures mux.Router and start listening requests to 0.0.0.0:8080
 func Run() error {
 	core.Init("static")
 	wd, _ := os.Getwd()
@@ -31,7 +32,7 @@ func Run() error {
 
 	routemgr.HandleHttp("/_config", http.MethodGet, model.PERM_ALL, func(w http.ResponseWriter, r *http.Request) error {
 		all := make(map[string]interface{})
-		err := cfgmgr.Load("client", all)
+		err := cfgmgr.Load("client", all) // Get value under key "config: client" on redis server
 		if err != nil {
 			return err
 		}

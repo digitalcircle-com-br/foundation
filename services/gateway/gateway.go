@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/digitalcircle-com-br/foundation/lib/runmgr"
 	"io"
 	"net/http"
 	"net/url"
@@ -270,10 +271,11 @@ func Prepare() error {
 	return nil
 }
 
+//Run configures mux.Router and start listening requests to 0.0.0.0:8080
 func Run() error {
 	err := Prepare()
 	if err != nil {
 		return err
 	}
-	return http.ListenAndServe(":8080", routemgr.Router())
+	return runmgr.RunS()
 }

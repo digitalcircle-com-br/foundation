@@ -13,19 +13,22 @@ import (
 func Setup() error {
 	crudmgr.SetDefaultTenant("auth")
 
-	crudmgr.MustHandle(&model.SecPerm{})
-	crudmgr.MustHandle(&model.SecGroup{})
-	crudmgr.MustHandle(&model.SecUser{})
+	crudmgr.MustHandle(&model.SecPerm{})  // Defines a URI to table sec_perm in mux.Router
+	crudmgr.MustHandle(&model.SecGroup{}) // Defines a URI to table sec_group in mux.Router
+	crudmgr.MustHandle(&model.SecUser{})  // Defines a URI to table sec_user in mux.Router
 
 	return nil
 }
 
+/*Run configures mux.Router and start listening to redis's request queue identified by the key "queue: authmgr" */
 func Run() error {
 	core.Init("authmgr")
 	err := Setup()
 	if err != nil {
 		return err
 	}
+
+	// Middleware to log incoming requests
 	routemgr.Router().Use(func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			core.Debug("Got: %s", r.URL.String())
@@ -33,6 +36,6 @@ func Run() error {
 		})
 	})
 
-	err = runmgr.RunABlock()
+	err = runmgr.RunABlock() // blocks execution
 	return err
 }

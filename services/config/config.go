@@ -19,6 +19,7 @@ import (
 
 var root = "db"
 
+//json2Yaml parses json to yaml
 func json2Yaml(bs []byte) ([]byte, error) {
 	var root map[string]interface{}
 	err := json.Unmarshal(bs, &root)
@@ -29,6 +30,7 @@ func json2Yaml(bs []byte) ([]byte, error) {
 	return nbs, err
 }
 
+//yaml2Json parses yaml to json
 func yaml2Json(bs []byte) ([]byte, error) {
 	var root map[string]interface{}
 	err := yaml.Unmarshal(bs, &root)
@@ -39,12 +41,14 @@ func yaml2Json(bs []byte) ([]byte, error) {
 	return nbs, err
 }
 
+//fixPath parse "/w/x/y/z" to "y/z"
 func fixPath(r *http.Request) string {
 	pathparts := strings.Split(r.URL.Path, "/")
 	npath := strings.Join(pathparts[2:], "/")
 	return npath
 }
 
+//get returns the file identified by the request's URI
 func get(w http.ResponseWriter, r *http.Request) error {
 	npath := fixPath(r)
 	bs, err := os.ReadFile(filepath.Join(root, npath+".yaml"))
@@ -61,6 +65,7 @@ func get(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+//post writes the configuration sent by client via Request.Body to file
 func post(w http.ResponseWriter, r *http.Request) error {
 	npath := fixPath(r)
 	dir := filepath.Dir(npath)
@@ -81,6 +86,7 @@ func post(w http.ResponseWriter, r *http.Request) error {
 	return err
 }
 
+//delete removes the file identified by the Request URI
 func delete(w http.ResponseWriter, r *http.Request) error {
 	npath := fixPath(r)
 	err := os.Remove(filepath.Join(root, npath))
@@ -88,6 +94,7 @@ func delete(w http.ResponseWriter, r *http.Request) error {
 	return err
 }
 
+//list scans root directory, returning the present filenames to client
 func list(w http.ResponseWriter, r *http.Request) error {
 	var ret []string
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
@@ -111,6 +118,7 @@ func list(w http.ResponseWriter, r *http.Request) error {
 	return err
 }
 
+//Setup adds configuration API paths to mux.Router
 func Setup() {
 	routemgr.HandleHttp("/list", http.MethodGet, model.PERM_ALL, list)
 	routemgr.HandleHttp("/k/", http.MethodGet, model.PERM_ALL, get)
@@ -131,6 +139,7 @@ func Setup() {
 	})
 }
 
+//Run configures mux.Router with configuration routes and start listening requests to 0.0.0.0:8080
 func Run() error {
 	Setup()
 	return http.ListenAndServe(":8080", routemgr.Router())

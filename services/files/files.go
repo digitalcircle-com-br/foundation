@@ -170,18 +170,20 @@ func (s service) List(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(files)
 
 }
+
+/*Run configures mux.Router and start redis's request queue identified by the key "queue: core.SvcName" */
 func Run() error {
 	core.Init("files")
 	err := Service.Setup()
 	if err != nil {
 		return err
 	}
-	routemgr.Router().Name("file.upload").Methods(http.MethodPost).Path("upload").HandlerFunc(Service.Download)
+	routemgr.Router().Name("file.upload").Methods(http.MethodPost).Path("upload").HandlerFunc(Service.Upload)
 	routemgr.Router().Name("file.download").Methods(http.MethodGet).Path("download").HandlerFunc(Service.Download)
 	routemgr.Router().Name("file.list").Methods(http.MethodPost).Path("list").HandlerFunc(Service.List)
 	routemgr.Router().Name("file.del").Methods(http.MethodPost).Path("del").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	runmgr.RunABlock()
+	err = runmgr.RunABlock()
 
-	return nil
+	return err
 
 }

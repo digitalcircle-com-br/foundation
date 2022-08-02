@@ -9,12 +9,15 @@ import (
 	"github.com/digitalcircle-com-br/foundation/lib/runmgr"
 )
 
-func Run() {
+/*Run configures mux.Router and start listening to redis's request queue identified by the key "queue: test" */
+func Run() error {
 	core.Init("test")
 	routemgr.HandleHttp("/test", http.MethodGet, model.PERM_ALL, func(w http.ResponseWriter, r *http.Request) error {
 		r.Write(core.LogWriter())
 		return nil
 	})
 
-	runmgr.RunABlock()
+	err := runmgr.RunABlock()
+
+	return err
 }
