@@ -14,14 +14,17 @@ import (
 	"gorm.io/gorm"
 )
 
-var dbs = make(map[string]*gorm.DB)
+var dbs = make(map[string]*gorm.DB) // stores database connections identified by names
 var mx sync.RWMutex
 
+//saveDb safely inserts *gorm.DB, identifying it with provided name in dbs
 func saveDb(n string, d *gorm.DB) {
 	mx.Lock()
 	defer mx.Unlock()
 	dbs[n] = d
 }
+
+//loadDb safely retrieves *gorm.DB identified by the provided name
 func loadDb(n string) (d *gorm.DB, ok bool) {
 	mx.RLock()
 	defer mx.RUnlock()
@@ -29,6 +32,7 @@ func loadDb(n string) (d *gorm.DB, ok bool) {
 	return
 }
 
+//loadDb safely removes *gorm.DB identified by the provided name from dbs
 func delDb(n string) {
 	mx.Lock()
 	defer mx.Unlock()
@@ -37,18 +41,24 @@ func delDb(n string) {
 
 var defaultdb = "foundation"
 
+//SetDefault sets the default database name
 func SetDefault(s string) {
 	defaultdb = s
 }
+
+//DB returns the default database connection
 func DB() (ret *gorm.DB, err error) {
 	return DBN(defaultdb)
 }
+
+//DBMaster wraps DBN("postgres")
 func DBMaster() (ret *gorm.DB, err error) {
 	return DBN("postgres")
 }
 
 var dsns map[string]string
 
+//DBN returns the *gorm.DB identified by the provided name
 func DBN(n string) (ret *gorm.DB, err error) {
 	defer func() {
 		if err != nil {
@@ -134,6 +144,7 @@ func DBN(n string) (ret *gorm.DB, err error) {
 	return
 }
 
+//DBClose closes connection with database identified by provided name
 func DBClose(n string) error {
 	db, ok := loadDb(n)
 	if ok {
@@ -151,6 +162,7 @@ func DBClose(n string) error {
 	return nil
 }
 
+//DBCloseAll closes connection of all configured databases
 func DBCloseAll() {
 	ks := make([]string, len(dbs))
 	for k := range dbs {
@@ -161,6 +173,7 @@ func DBCloseAll() {
 	}
 }
 
+//DSNS returns all database identifiers stored on redis
 func DSNS() ([]string, error) {
 	ks, err := redismgr.Keys("config:dsn:*")
 	ret := make([]string, 0)
@@ -174,6 +187,7 @@ func DSNS() ([]string, error) {
 	return ret, nil
 }
 
+//DropRecreate recreates database identified by provided name
 func DropRecreate(n string) error {
 	db, err := DBMaster()
 	if err != nil {

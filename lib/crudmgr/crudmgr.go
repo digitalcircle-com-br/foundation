@@ -53,6 +53,7 @@ type CrudResponse struct {
 	RowsAffected int64       `json:"rowsaffected"`
 }
 
+//Retrieve returns data from database server based on opts provided
 func Retrieve[T any](opts *CrudOpts) (interface{}, error) {
 	db, err := dbmgr.DBN(opts.Db)
 	if err != nil {
@@ -103,6 +104,7 @@ func Retrieve[T any](opts *CrudOpts) (interface{}, error) {
 	return CrudResponse{Data: ret}, err
 }
 
+//Create inserts data in database server based on opts provided
 func Create(opts *CrudOpts) (interface{}, error) {
 	db, err := dbmgr.DBN(opts.Db)
 	if err != nil {
@@ -118,6 +120,7 @@ func Create(opts *CrudOpts) (interface{}, error) {
 	return CrudResponse{Data: []interface{}{opts.Data}}, err
 }
 
+//Update changes data in database server based on opts provided
 func Update(opts *CrudOpts) (interface{}, error) {
 	db, err := dbmgr.DBN(opts.Db)
 	if err != nil {
@@ -136,6 +139,7 @@ func Update(opts *CrudOpts) (interface{}, error) {
 	return ret, tx.Error
 }
 
+//Delete removes data from database server based on opts provided
 func Delete(opts *CrudOpts) (interface{}, error) {
 	db, err := dbmgr.DBN(opts.Db)
 	if err != nil {
@@ -156,6 +160,7 @@ func Delete(opts *CrudOpts) (interface{}, error) {
 	return ret, tx.Error
 }
 
+//AssociationAssociate associate two tables based on opts provided
 func AssociationAssociate(opts *CrudOpts) (interface{}, error) {
 	db, err := dbmgr.DBN(opts.Db)
 	if err != nil {
@@ -167,6 +172,8 @@ func AssociationAssociate(opts *CrudOpts) (interface{}, error) {
 		opts.AssociationFieldB), opts.AssociationIDA, opts.AssociationIDB).Error
 	return nil, err
 }
+
+//AssociationDissociate dissociates two tables based on opts provided
 func AssociationDissociate(opts *CrudOpts) (interface{}, error) {
 	db, err := dbmgr.DBN(opts.Db)
 	if err != nil {
@@ -178,6 +185,8 @@ func AssociationDissociate(opts *CrudOpts) (interface{}, error) {
 		opts.AssociationFieldB), opts.AssociationIDA, opts.AssociationIDB).Error
 	return nil, err
 }
+
+//MustHandle calls Handle but panics if returned err != nil
 func MustHandle[T any](a T) {
 	err := Handle(a)
 	if err != nil {
@@ -191,6 +200,7 @@ func SetDefaultTenant(t string) {
 	defaultTenant = t
 }
 
+//Handle register HTTP route on mux.Router for provided model T
 func Handle[T any](a T) error {
 	//tp := reflect.TypeOf(a).Elem()
 	db, err := dbmgr.DB()
