@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/digitalcircle-com-br/foundation/lib/core"
+	"github.com/sirupsen/logrus"
 )
 
 type Caller interface {
@@ -24,7 +24,7 @@ func Do(in *http.Request) (out *http.Response, err error) {
 func DoQ(q string, in *http.Request) (out *http.Response, err error) {
 	out, err = caller.DoQ(q, in)
 	if err != nil {
-		core.Warn("Error enqueuing data at callmgr.DoQ: %s => %v", q, err)
+		logrus.Warnf("Error enqueuing data at callmgr.DoQ: %s => %v", q, err)
 	}
 	return
 
@@ -33,7 +33,7 @@ func DoQ(q string, in *http.Request) (out *http.Response, err error) {
 func EncQ(q string, in *http.Request) (err error) {
 	err = caller.EncQ(q, in)
 	if err != nil {
-		core.Warn("Error enqueuing data at callmgr.EnqQ: %s => %v", q, err)
+		logrus.Warnf("Error enqueuing data at callmgr.EnqQ: %s => %v", q, err)
 	}
 	return
 }
@@ -41,7 +41,7 @@ func EncQ(q string, in *http.Request) (err error) {
 func SimpleEncQ(q string, i interface{}) error {
 	bs, err := json.Marshal(i)
 	if err != nil {
-		core.Warn("Error marshalling data for enqueueing at callmgr.SimpleEncQ: %s => %v", q, err)
+		logrus.Warnf("Error marshalling data for enqueueing at callmgr.SimpleEncQ: %s => %v", q, err)
 		return err
 	}
 	req, err := http.NewRequest(http.MethodPost, "/cmd", bytes.NewReader(bs))

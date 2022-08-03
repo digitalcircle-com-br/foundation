@@ -19,6 +19,9 @@ arm64:
 product-gateway:
 	$(eval PRODUCT := gateway)
 
+product-gw:
+	$(eval PRODUCT := gw)
+
 product-auth:
 	$(eval PRODUCT := auth)
 
@@ -30,6 +33,9 @@ product-static:
 
 product-config:
 	$(eval PRODUCT := config)
+
+product-nats-server:
+	$(eval PRODUCT := nats-server)
 
 docker-build:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o deploy/$(PRODUCT)/main \
@@ -55,5 +61,8 @@ img-auth: product-auth docker-build docker-push
 
 img-config: product-config docker-build docker-push
 
-
 img-static: product-static docker-build docker-push
+
+img-nats-server: product-nats-server docker-build docker-push
+
+img-gw: product-gw docker-build docker-push

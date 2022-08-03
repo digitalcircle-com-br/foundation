@@ -4,16 +4,37 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"sync"
 
 	"github.com/digitalcircle-com-br/foundation/lib/core"
-	"github.com/digitalcircle-com-br/foundation/lib/dbmgr"
 	"github.com/digitalcircle-com-br/foundation/lib/model"
 	"github.com/digitalcircle-com-br/foundation/lib/sessionmgr"
 	"github.com/gorilla/mux"
 	"gorm.io/gorm"
 )
 
+var mx sync.RWMutex
+var dbs map[string]*gorm.DB = make(map[string]*gorm.DB)
 
+func AddDb(s string, db *gorm.DB) {
+	mx.Lock()
+	defer mx.Unlock()
+	dbs[s] = db
+}
+
+func SetDefaultDB(db *gorm.DB) {
+	AddDb("default", db)
+}
+
+func DBN(s string) *gorm.DB {
+	mx.RLock()
+	defer mx.RUnlock()
+	return dbs[s]
+}
+
+func DB() *gorm.DB {
+	return DBN("default")
+}
 
 func Req(c context.Context) *http.Request {
 	raw := c.Value(model.CTX_REQ)
@@ -48,7 +69,7 @@ func Db(c context.Context) (ret *gorm.DB, err error) {
 	if t == "" {
 		return nil, errors.New("tenant not found")
 	}
-	ret, err = dbmgr.DBN(t)
+	ret = DBN(t)
 	return
 }
 

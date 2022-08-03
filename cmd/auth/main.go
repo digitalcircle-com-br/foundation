@@ -1,10 +1,11 @@
 package main
 
-import "github.com/digitalcircle-com-br/foundation/services/auth"
+import "errors"
 
 func main() {
-	err := auth.Run()
-	if err != nil {
-		panic(err)
-	}
+	panic(errors.New("Implement me"))
+	// err := auth.Run()
+	// if err != nil {
+	// 	panic(err)
+	// }
 }

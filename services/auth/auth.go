@@ -7,14 +7,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/digitalcircle-com-br/foundation/lib/core"
 	"github.com/digitalcircle-com-br/foundation/lib/ctxmgr"
-	"github.com/digitalcircle-com-br/foundation/lib/dbmgr"
+	"github.com/digitalcircle-com-br/foundation/lib/migration"
 	"github.com/digitalcircle-com-br/foundation/lib/model"
 	"github.com/digitalcircle-com-br/foundation/lib/routemgr"
-	"github.com/digitalcircle-com-br/foundation/lib/runmgr"
 	"github.com/digitalcircle-com-br/foundation/lib/sessionmgr"
 	"github.com/digitalcircle-com-br/foundation/services/auth/hash"
+	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -26,59 +26,6 @@ type service struct{}
 var Service = new(service)
 
 var DB *gorm.DB
-
-func (s *service) Setup() error {
-	var err error
-	DB, err = dbmgr.DBN("auth")
-	if err != nil {
-		return err
-	}
-	dbmgr.MigrationAdd("auth-00001", "Creates Authentication DB",
-		func(s string) bool {
-			return s == "auth"
-		},
-		func(adb *gorm.DB) error {
-			for _, mod := range []interface{}{
-				&model.SecUser{},
-				&model.SecGroup{},
-				&model.SecPerm{},
-			} {
-				err := adb.AutoMigrate(mod)
-				if err != nil {
-					return err
-				}
-			}
-
-			perm := &model.SecPerm{Name: "*", Val: "*"}
-			err := adb.Create(perm).Error
-			if err != nil {
-				return err
-			}
-			group := &model.SecGroup{Name: "root", Perms: []*model.SecPerm{perm}}
-			err = adb.Create(group).Error
-			if err != nil {
-				return err
-			}
-			enabled := true
-
-			user := &model.SecUser{
-				Username: "root",
-				Hash:     "$argon2id$v=19$m=65536,t=3,p=2$nTPFgXmlMFphn506a/VQ2Q$0Y/KXMMxDb28CzuqGZdShAnNuNs3l3vInJRh3xd5uq4",
-				Email:    "root@root.com",
-				Tenant:   "foundation",
-				Enabled:  &enabled, Groups: []*model.SecGroup{group},
-			}
-
-			err = adb.Create(user).Error
-			if err != nil {
-				return err
-			}
-			return nil
-
-		})
-
-	return dbmgr.MigrationRunOnDb("auth")
-}
 
 type AuthRequest struct {
 	Login    string `json:"login"`
@@ -170,24 +117,89 @@ func (s *service) Check(ctx context.Context, lr *model.EMPTY) (out bool, err err
 	return session != nil, nil
 }
 
-func Run() error {
-	var err error
-	core.Init("auth")
-	err = Service.Setup()
-	if err != nil {
-		return err
+func (s *service) CheckPerm(ctx context.Context, lr *model.EMPTY) (out bool, err error) {
+	logrus.Infof("Testing this")
+	req := ctxmgr.Req(ctx)
+	perm := req.URL.Query().Get("perm")
+	session := ctxmgr.Session(ctx)
+	_, ok := session.Perms[model.PermDef(perm)]
+	if !ok {
+		_, ok = session.Perms[model.PERM_ROOT]
 	}
-	routemgr.Handle("/login", http.MethodPost, model.PERM_ALL, Service.Login)
-	routemgr.Handle("/logout", http.MethodGet, model.PERM_AUTH, Service.Logout)
-	routemgr.Handle("/check", http.MethodGet, model.PERM_AUTH, Service.Check)
+	return ok, nil
+}
 
-	routemgr.Router().Use(func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			core.Debug("Got: %s", r.URL.String())
-			h.ServeHTTP(w, r)
-		})
+func Setup(r *mux.Router, db *gorm.DB) error {
+	var err error
+	DB = db
+	err = migration.Run(db, migration.Mig{Id: "auth001", Up: func(db *gorm.DB) error {
+
+		for _, mod := range []interface{}{
+			&model.SecUser{},
+			&model.SecGroup{},
+			&model.SecPerm{},
+		} {
+			err := db.AutoMigrate(mod)
+			if err != nil {
+				return err
+			}
+		}
+
+		perm := &model.SecPerm{Name: "*", Val: "*"}
+		err := db.Create(perm).Error
+		if err != nil {
+			return err
+		}
+		group := &model.SecGroup{Name: "root", Perms: []*model.SecPerm{perm}}
+		err = db.Create(group).Error
+		if err != nil {
+			return err
+		}
+		enabled := true
+
+		user := &model.SecUser{
+			Username: "root",
+			Hash:     "$argon2id$v=19$m=65536,t=3,p=2$nTPFgXmlMFphn506a/VQ2Q$0Y/KXMMxDb28CzuqGZdShAnNuNs3l3vInJRh3xd5uq4",
+			Email:    "root@root.com",
+			Tenant:   "foundation",
+			Enabled:  &enabled, Groups: []*model.SecGroup{group},
+		}
+
+		err = db.Create(user).Error
+		if err != nil {
+			return err
+		}
+		return nil
+	},
 	})
 
-	err = runmgr.RunABlock()
+	routemgr.Handle(r, "/login", http.MethodPost, model.PERM_ALL, Service.Login)
+	routemgr.Handle(r, "/logout", http.MethodGet, model.PERM_AUTH, Service.Logout)
+	routemgr.Handle(r, "/check", http.MethodGet, model.PERM_AUTH, Service.Check)
+	routemgr.Handle(r, "/checkperm", http.MethodGet, model.PERM_AUTH, Service.CheckPerm)
+
 	return err
 }
+
+// func Run(db *gorm.DB) error {
+// 	var err error
+// 	core.Init("auth")
+// 	// err = Service.Setup(db)
+// 	// if err != nil {
+// 	// 	return err
+// 	// }
+// 	routemgr.Handle("/login", http.MethodPost, model.PERM_ALL, Service.Login)
+// 	routemgr.Handle("/logout", http.MethodGet, model.PERM_AUTH, Service.Logout)
+// 	routemgr.Handle("/check", http.MethodGet, model.PERM_AUTH, Service.Check)
+// 	routemgr.Handle("/checkperm", http.MethodGet, model.PERM_AUTH, Service.CheckPerm)
+
+// 	routemgr.Router().Use(func(h http.Handler) http.Handler {
+// 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 			logrus.Debugf("Got: %s", r.URL.String())
+// 			h.ServeHTTP(w, r)
+// 		})
+// 	})
+
+// 	err = runmgr.RunABlock()
+// 	return err
+// }

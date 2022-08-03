@@ -1,16 +1,9 @@
 package crudmgr_test
 
 import (
-	"net/http"
-	"testing"
 	"time"
 
-	"github.com/digitalcircle-com-br/foundation/lib/crudmgr"
-	"github.com/digitalcircle-com-br/foundation/lib/dbmgr"
 	"github.com/digitalcircle-com-br/foundation/lib/model"
-	"github.com/digitalcircle-com-br/foundation/lib/routemgr"
-	"github.com/digitalcircle-com-br/foundation/lib/testmgr"
-	"github.com/stretchr/testify/assert"
 )
 
 type Astr struct {
@@ -19,68 +12,68 @@ type Astr struct {
 	Adt  time.Time
 }
 
-func Test_Create(t *testing.T) {
-	db, err := dbmgr.DBN("root")
-	assert.NoError(t, err)
-	err = db.AutoMigrate(&Astr{})
-	assert.NoError(t, err)
-	crudmgr.Handle(&Astr{})
+// func Test_Create(t *testing.T) {
+// 	db, err := dbmgr.DBN("root")
+// 	assert.NoError(t, err)
+// 	err = db.AutoMigrate(&Astr{})
+// 	assert.NoError(t, err)
+// 	crudmgr.Handle(&Astr{})
 
-	opts := &crudmgr.CrudOpts{Op: crudmgr.OP_C}
-	opts.Data = &Astr{Atxt: "some", Adt: time.Now()}
-	res := testmgr.NewInMemResponseWriter()
-	req := testmgr.HttpNewAuthRequestO(t, http.MethodPost, "/crud/astr", opts, res)
-	routemgr.Router().ServeHTTP(res, req)
-	assert.True(t, res.Status() <= 399)
+// 	opts := &crudmgr.CrudOpts{Op: crudmgr.OP_C}
+// 	opts.Data = &Astr{Atxt: "some", Adt: time.Now()}
+// 	res := testmgr.NewInMemResponseWriter()
+// 	req := testmgr.HttpNewAuthRequestO(t, http.MethodPost, "/crud/astr", opts, res)
+// 	routemgr.Router().ServeHTTP(res, req)
+// 	assert.True(t, res.Status() <= 399)
 
-}
+// }
 
-func Test_Retrieve(t *testing.T) {
-	db, err := dbmgr.DBN("root")
-	assert.NoError(t, err)
-	err = db.AutoMigrate(&Astr{})
-	assert.NoError(t, err)
-	crudmgr.Handle(&Astr{})
+// func Test_Retrieve(t *testing.T) {
+// 	db, err := dbmgr.DBN("root")
+// 	assert.NoError(t, err)
+// 	err = db.AutoMigrate(&Astr{})
+// 	assert.NoError(t, err)
+// 	crudmgr.Handle(&Astr{})
 
-	opts := &crudmgr.CrudOpts{Op: crudmgr.OP_R, Tb: "astrs"}
-	res := testmgr.NewInMemResponseWriter()
-	req := testmgr.HttpNewAuthRequestO(t, http.MethodPost, "/crud/astr", opts, res)
-	routemgr.Router().ServeHTTP(res, req)
-	assert.True(t, res.Status() <= 399)
+// 	opts := &crudmgr.CrudOpts{Op: crudmgr.OP_R, Tb: "astrs"}
+// 	res := testmgr.NewInMemResponseWriter()
+// 	req := testmgr.HttpNewAuthRequestO(t, http.MethodPost, "/crud/astr", opts, res)
+// 	routemgr.Router().ServeHTTP(res, req)
+// 	assert.True(t, res.Status() <= 399)
 
-}
+// }
 
-func Test_Update(t *testing.T) {
-	db, err := dbmgr.DBN("root")
-	assert.NoError(t, err)
-	err = db.AutoMigrate(&Astr{})
-	assert.NoError(t, err)
-	crudmgr.Handle(&Astr{})
+// func Test_Update(t *testing.T) {
+// 	db, err := dbmgr.DBN("root")
+// 	assert.NoError(t, err)
+// 	err = db.AutoMigrate(&Astr{})
+// 	assert.NoError(t, err)
+// 	crudmgr.Handle(&Astr{})
 
-	opts := &crudmgr.CrudOpts{Op: crudmgr.OP_U, Tb: "astrs", ID: 1}
-	opts.Data = &Astr{Atxt: "somev2", Adt: time.Now()}
-	res := testmgr.NewInMemResponseWriter()
-	req := testmgr.HttpNewAuthRequestO(t, http.MethodPost, "/crud/astr", opts, res)
-	routemgr.Router().ServeHTTP(res, req)
-	assert.True(t, res.Status() <= 399)
+// 	opts := &crudmgr.CrudOpts{Op: crudmgr.OP_U, Tb: "astrs", ID: 1}
+// 	opts.Data = &Astr{Atxt: "somev2", Adt: time.Now()}
+// 	res := testmgr.NewInMemResponseWriter()
+// 	req := testmgr.HttpNewAuthRequestO(t, http.MethodPost, "/crud/astr", opts, res)
+// 	routemgr.Router().ServeHTTP(res, req)
+// 	assert.True(t, res.Status() <= 399)
 
-}
+// }
 
-func Test_Delete(t *testing.T) {
-	db, err := dbmgr.DBN("root")
-	assert.NoError(t, err)
-	err = db.AutoMigrate(&Astr{})
-	assert.NoError(t, err)
-	crudmgr.Handle(&Astr{})
+// func Test_Delete(t *testing.T) {
+// 	db, err := dbmgr.DBN("root")
+// 	assert.NoError(t, err)
+// 	err = db.AutoMigrate(&Astr{})
+// 	assert.NoError(t, err)
+// 	crudmgr.Handle(&Astr{})
 
-	opts := &crudmgr.CrudOpts{Op: crudmgr.OP_D, Tb: "astrs", ID: 1}
-	opts.Data = &Astr{Atxt: "some", Adt: time.Now()}
-	res := testmgr.NewInMemResponseWriter()
-	req := testmgr.HttpNewAuthRequestO(t, http.MethodPost, "/crud/astr", opts, res)
-	routemgr.Router().ServeHTTP(res, req)
-	assert.True(t, res.Status() <= 399)
+// 	opts := &crudmgr.CrudOpts{Op: crudmgr.OP_D, Tb: "astrs", ID: 1}
+// 	opts.Data = &Astr{Atxt: "some", Adt: time.Now()}
+// 	res := testmgr.NewInMemResponseWriter()
+// 	req := testmgr.HttpNewAuthRequestO(t, http.MethodPost, "/crud/astr", opts, res)
+// 	routemgr.Router().ServeHTTP(res, req)
+// 	assert.True(t, res.Status() <= 399)
 
-}
+// }
 
 // func Test_Create(t *testing.T) {
 // 	db, err := dbmgr.DBN("test")

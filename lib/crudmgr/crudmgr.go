@@ -9,11 +9,11 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"github.com/digitalcircle-com-br/foundation/lib/core"
 	"github.com/digitalcircle-com-br/foundation/lib/ctxmgr"
-	"github.com/digitalcircle-com-br/foundation/lib/dbmgr"
 	"github.com/digitalcircle-com-br/foundation/lib/model"
 	"github.com/digitalcircle-com-br/foundation/lib/routemgr"
+	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -25,6 +25,90 @@ const (
 	OP_AA = "AA"
 	OP_AD = "AD"
 )
+
+// func findAll[T any](db *gorm.DB) ([]T, error) {
+// 	var ret = make([]T, 0)
+// 	err := db.Find(&ret).Error
+// 	return ret, err
+// }
+
+// func findByID[T any](db *gorm.DB, id string) (T, error) {
+// 	ret := new(T)
+// 	err := db.Where("id = ?", id).First(ret).Error
+// 	return *ret, err
+// }
+
+// func create[T any](db *gorm.DB, t T) error {
+// 	return db.Create(t).Error
+// }
+
+// func update[T any](db *gorm.DB, t T) error {
+// 	return db.Updates(&t).Error
+// }
+
+// func delete[T any](db *gorm.DB, id string) error {
+// 	return db.Where("id = ?", id).Delete(new(T)).Error
+// }
+
+// func Setup[T any](db *gorm.DB, nr *mux.Router, path string, t T) {
+// 	logrus.Infof("Setting up route %s", path)
+
+// 	nr.Methods(http.MethodGet).Path(path + "/{id}").HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+// 		ret, err := findByID[T](db, mux.Vars(request)["id"])
+// 		if err != nil {
+// 			http.Error(writer, err.Error(), http.StatusInternalServerError)
+// 			return
+// 		}
+// 		json.NewEncoder(writer).Encode(ret)
+// 	})
+// 	nr.Methods(http.MethodDelete).Path(path + "/{id}").HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+// 		err := delete[T](db, mux.Vars(request)["id"])
+// 		if err != nil {
+// 			http.Error(writer, err.Error(), http.StatusInternalServerError)
+// 			return
+// 		}
+// 		json.NewEncoder(writer).Encode("ok")
+// 	})
+// 	nr.Methods(http.MethodGet).Path(path).HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+// 		ret, err := findAll[T](db)
+// 		if err != nil {
+// 			http.Error(writer, err.Error(), http.StatusInternalServerError)
+// 			return
+// 		}
+// 		json.NewEncoder(writer).Encode(ret)
+// 	})
+// 	nr.Methods(http.MethodPost).Path(path).HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+// 		at := new(T)
+// 		err := json.NewDecoder(request.Body).Decode(at)
+// 		if err != nil {
+// 			http.Error(writer, err.Error(), http.StatusInternalServerError)
+// 			return
+// 		}
+// 		err = create(db, at)
+// 		if err != nil {
+// 			http.Error(writer, err.Error(), http.StatusInternalServerError)
+// 			return
+// 		}
+
+// 		json.NewEncoder(writer).Encode(at)
+// 	})
+// 	nr.Methods(http.MethodPut).Path(path).HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+// 		at := new(T)
+// 		err := json.NewDecoder(request.Body).Decode(at)
+// 		if err != nil {
+// 			http.Error(writer, err.Error(), http.StatusInternalServerError)
+// 			return
+// 		}
+// 		err = update(db, at)
+// 		if err != nil {
+// 			http.Error(writer, err.Error(), http.StatusInternalServerError)
+// 			return
+// 		}
+
+// 		json.NewEncoder(writer).Encode(at)
+// 	})
+
+// }
 
 type CrudOpts struct {
 	Op           string        `json:"op"`           // OP - can be C R U OR D
@@ -53,11 +137,7 @@ type CrudResponse struct {
 	RowsAffected int64       `json:"rowsaffected"`
 }
 
-func Retrieve[T any](opts *CrudOpts) (interface{}, error) {
-	db, err := dbmgr.DBN(opts.Db)
-	if err != nil {
-		return nil, err
-	}
+func retrieve[T any](db *gorm.DB, opts *CrudOpts) (interface{}, error) {
 
 	if opts.PageSize == 0 || opts.PageSize > 1000 {
 		opts.PageSize = 1000
@@ -92,37 +172,29 @@ func Retrieve[T any](opts *CrudOpts) (interface{}, error) {
 
 	default:
 		for _, assoc := range opts.Associations {
-			core.Debug("Loading association: [%s]", assoc)
+			logrus.Debugf("Loading association: [%s]", assoc)
 			tx = tx.Preload(assoc)
 		}
 
 	}
 
-	err = tx.Limit(opts.PageSize).Offset(offset).Find(&ret).Error
+	err := tx.Limit(opts.PageSize).Offset(offset).Find(&ret).Error
 
 	return CrudResponse{Data: ret}, err
 }
 
-func Create(opts *CrudOpts) (interface{}, error) {
-	db, err := dbmgr.DBN(opts.Db)
-	if err != nil {
-		return nil, err
-	}
+func create(db *gorm.DB, opts *CrudOpts) (interface{}, error) {
 
 	if opts.Debug {
 		db = db.Debug()
 	}
 
-	err = db.Table(opts.Tb).Create(opts.Data).Error
+	err := db.Table(opts.Tb).Create(opts.Data).Error
 
 	return CrudResponse{Data: []interface{}{opts.Data}}, err
 }
 
-func Update(opts *CrudOpts) (interface{}, error) {
-	db, err := dbmgr.DBN(opts.Db)
-	if err != nil {
-		return nil, err
-	}
+func update(db *gorm.DB, opts *CrudOpts) (interface{}, error) {
 
 	if opts.Debug {
 		db = db.Debug()
@@ -136,11 +208,7 @@ func Update(opts *CrudOpts) (interface{}, error) {
 	return ret, tx.Error
 }
 
-func Delete(opts *CrudOpts) (interface{}, error) {
-	db, err := dbmgr.DBN(opts.Db)
-	if err != nil {
-		return nil, err
-	}
+func delete(db *gorm.DB, opts *CrudOpts) (interface{}, error) {
 
 	if opts.Debug {
 		db = db.Debug()
@@ -156,30 +224,26 @@ func Delete(opts *CrudOpts) (interface{}, error) {
 	return ret, tx.Error
 }
 
-func AssociationAssociate(opts *CrudOpts) (interface{}, error) {
-	db, err := dbmgr.DBN(opts.Db)
-	if err != nil {
-		return nil, err
-	}
-	err = db.Exec(fmt.Sprintf("insert into \"%s\"(\"%s\",\"%s\") values (?,?)",
+func associationAssociate(db *gorm.DB, opts *CrudOpts) (interface{}, error) {
+
+	err := db.Exec(fmt.Sprintf("insert into \"%s\"(\"%s\",\"%s\") values (?,?)",
 		opts.AssociationTable,
 		opts.AssociationFieldA,
 		opts.AssociationFieldB), opts.AssociationIDA, opts.AssociationIDB).Error
 	return nil, err
 }
-func AssociationDissociate(opts *CrudOpts) (interface{}, error) {
-	db, err := dbmgr.DBN(opts.Db)
-	if err != nil {
-		return nil, err
-	}
-	err = db.Exec(fmt.Sprintf("delete from \"%s\" where \"%s\" = ? and \"%s\" = ?",
+
+func associationDissociate(db *gorm.DB, opts *CrudOpts) (interface{}, error) {
+
+	err := db.Exec(fmt.Sprintf("delete from \"%s\" where \"%s\" = ? and \"%s\" = ?",
 		opts.AssociationTable,
 		opts.AssociationFieldA,
 		opts.AssociationFieldB), opts.AssociationIDA, opts.AssociationIDB).Error
 	return nil, err
 }
-func MustHandle[T any](a T) {
-	err := Handle(a)
+
+func MustHandle[T any](r *mux.Router, db *gorm.DB, a T) {
+	err := Handle(r, db, a)
 	if err != nil {
 		panic(err)
 	}
@@ -191,19 +255,14 @@ func SetDefaultTenant(t string) {
 	defaultTenant = t
 }
 
-func Handle[T any](a T) error {
-	//tp := reflect.TypeOf(a).Elem()
-	db, err := dbmgr.DB()
-	if err != nil {
-		return err
-	}
+func Handle[T any](r *mux.Router, db *gorm.DB, a T) error {
 	stmt := &gorm.Statement{DB: db}
 	stmt.Parse(a)
 	tb := stmt.Schema.Table
 
-	core.Log("Registering route %s for CRUD %#v", tb, a)
+	logrus.Infof("Registering route %s for CRUD %T", tb, a)
 
-	routemgr.HandleHttp("/crud/"+tb,
+	routemgr.HandleHttp(r, "/"+tb,
 		http.MethodPost,
 		model.PERM_AUTH,
 		func(w http.ResponseWriter, r *http.Request) error {
@@ -212,7 +271,7 @@ func Handle[T any](a T) error {
 				r := recover()
 				if r != nil {
 					msg := fmt.Sprintf("Recovering from: %v\n%s ", r, string(debug.Stack()))
-					core.Warn(msg)
+					logrus.Warnf(msg)
 					http.Error(w, msg, http.StatusInternalServerError)
 				}
 			}()
@@ -261,17 +320,17 @@ func Handle[T any](a T) error {
 			switch opts.Op {
 
 			case OP_C:
-				ret, err = Create(opts)
+				ret, err = create(db, opts)
 			case OP_R:
-				ret, err = Retrieve[T](opts)
+				ret, err = retrieve[T](db, opts)
 			case OP_U:
-				ret, err = Update(opts)
+				ret, err = update(db, opts)
 			case OP_D:
-				ret, err = Delete(opts)
+				ret, err = delete(db, opts)
 			case OP_AA:
-				ret, err = AssociationAssociate(opts)
+				ret, err = associationAssociate(db, opts)
 			case OP_AD:
-				ret, err = AssociationDissociate(opts)
+				ret, err = associationDissociate(db, opts)
 			default:
 				http.Error(w, "Unknown op: "+opts.Op, http.StatusBadRequest)
 				return nil

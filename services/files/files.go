@@ -10,12 +10,12 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/digitalcircle-com-br/foundation/lib/core"
 	"github.com/digitalcircle-com-br/foundation/lib/ctxmgr"
-	"github.com/digitalcircle-com-br/foundation/lib/dbmgr"
+	"github.com/gorilla/mux"
+
+	"github.com/digitalcircle-com-br/foundation/lib/migration"
 	"github.com/digitalcircle-com-br/foundation/lib/model"
 	"github.com/digitalcircle-com-br/foundation/lib/routemgr"
-	"github.com/digitalcircle-com-br/foundation/lib/runmgr"
 	"gorm.io/gorm"
 )
 
@@ -23,14 +23,11 @@ type service struct{}
 
 var Service = new(service)
 
-func (s service) Setup() error {
-	dbmgr.MigrationAdd("files-0001", "Creates Basic Files Infra", func(s string) bool {
-		return s != "postgres" && s != "auth"
-	}, func(d *gorm.DB) error {
-		return d.AutoMigrate(&model.File{})
+func (s service) Setup(db *gorm.DB) error {
+	return migration.Run(db, migration.Mig{Id: "files-001", Up: func(db *gorm.DB) error {
+		return db.AutoMigrate(&model.File{})
+	},
 	})
-
-	return dbmgr.MigrationRun()
 }
 
 type UploadResponseEntry struct {
@@ -170,18 +167,27 @@ func (s service) List(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(files)
 
 }
-func Run() error {
-	core.Init("files")
-	err := Service.Setup()
-	if err != nil {
-		return err
-	}
-	routemgr.Router().Name("file.upload").Methods(http.MethodPost).Path("upload").HandlerFunc(Service.Download)
-	routemgr.Router().Name("file.download").Methods(http.MethodGet).Path("download").HandlerFunc(Service.Download)
-	routemgr.Router().Name("file.list").Methods(http.MethodPost).Path("list").HandlerFunc(Service.List)
-	routemgr.Router().Name("file.del").Methods(http.MethodPost).Path("del").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	runmgr.RunABlock()
 
+func Setup(r *mux.Router, d *gorm.DB) error {
+	r.Name("file.upload").Methods(http.MethodPost).Path("upload").HandlerFunc(Service.Download)
+	r.Name("file.download").Methods(http.MethodGet).Path("download").HandlerFunc(Service.Download)
+	r.Name("file.list").Methods(http.MethodPost).Path("list").HandlerFunc(Service.List)
+	r.Name("file.del").Methods(http.MethodPost).Path("del").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	return nil
-
 }
+
+// func Run(db *gorm.DB) error {
+// 	core.Init("files")
+// 	err := Service.Setup(db)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	routemgr.Router().Name("file.upload").Methods(http.MethodPost).Path("upload").HandlerFunc(Service.Download)
+// 	routemgr.Router().Name("file.download").Methods(http.MethodGet).Path("download").HandlerFunc(Service.Download)
+// 	routemgr.Router().Name("file.list").Methods(http.MethodPost).Path("list").HandlerFunc(Service.List)
+// 	routemgr.Router().Name("file.del").Methods(http.MethodPost).Path("del").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+// 	runmgr.RunABlock()
+
+// 	return nil
+
+// }

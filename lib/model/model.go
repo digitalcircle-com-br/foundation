@@ -11,9 +11,10 @@ type EMPTY struct{}
 type PermDef string
 
 const (
-	PERM_ALL  PermDef = ""
-	PERM_AUTH PermDef = "+"
-	PERM_ROOT PermDef = "*"
+	PERM_ALL     PermDef = ""
+	PERM_AUTH    PermDef = "+"
+	PERM_ROOT    PermDef = "*"
+	PERM_USERADM PermDef = "user-adm"
 )
 
 type CtxKey string
@@ -81,6 +82,10 @@ type Session struct {
 	Hash      []byte             `json:"-"`
 }
 
+type RawSession struct {
+	Id   string
+	Data []byte
+}
 type ApiEntry struct {
 	Path   string
 	Method string

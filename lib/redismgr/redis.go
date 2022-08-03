@@ -10,6 +10,7 @@ import (
 
 	"github.com/digitalcircle-com-br/foundation/lib/core"
 	libredis "github.com/go-redis/redis/v8"
+	"github.com/sirupsen/logrus"
 )
 
 var rediscli *libredis.Client
@@ -36,7 +37,7 @@ func Cli() *libredis.Client {
 			if err == nil {
 				return rediscli
 			} else {
-				core.Warn("could not connect to redis - will retry (%v/10)", i)
+				logrus.New().Warnf("could not connect to redis - will retry (%v/10)", i)
 				time.Sleep(time.Second)
 				i++
 				if i >= 10 {
