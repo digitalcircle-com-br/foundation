@@ -10,8 +10,7 @@ import (
 	"runtime/debug"
 
 	"github.com/digitalcircle-com-br/foundation/lib/ctxmgr"
-	"github.com/digitalcircle-com-br/foundation/lib/model"
-	"github.com/digitalcircle-com-br/foundation/lib/routemgr"
+	"github.com/digitalcircle-com-br/foundation/lib/fmodel"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -129,7 +128,7 @@ type CrudOpts struct {
 	AssociationIDB    uint   `json:"association_id_b"`
 	Debug             bool   `json:"debug"`
 	AutoPreload       bool   `json:"auto_preload"`
-	//dataObj model.VO
+	//dataObj fmodel.VO
 }
 
 type CrudResponse struct {
@@ -255,6 +254,86 @@ func SetDefaultTenant(t string) {
 	defaultTenant = t
 }
 
+func handle[T any](db *gorm.DB, tb string, w http.ResponseWriter, r *http.Request) error {
+	defer func() {
+		r.Body.Close()
+		r := recover()
+		if r != nil {
+			msg := fmt.Sprintf("Recovering from: %v\n%s ", r, string(debug.Stack()))
+			logrus.Warnf(msg)
+			http.Error(w, msg, http.StatusInternalServerError)
+		}
+	}()
+	sess := ctxmgr.Session(r.Context())
+	if sess == nil {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return nil
+	}
+
+	opts := new(CrudOpts)
+
+	buf := &bytes.Buffer{}
+	io.Copy(buf, r.Body)
+
+	err := json.Unmarshal(buf.Bytes(), opts)
+	if err != nil {
+		return err
+	}
+
+	_, ok := sess.Perms[fmodel.PermDef("crud."+tb+"."+opts.Op)]
+	if !ok {
+		_, ok = sess.Perms[fmodel.PERM_ROOT]
+	}
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return nil
+	}
+
+	//typeData := reflect.New(tp).Interface()
+	typeData := new(T)
+	bs, _ := json.Marshal(opts.Data)
+	json.Unmarshal(bs, typeData)
+	opts.Data = typeData
+	//no := reflect.New(tp).Interface()
+
+	if defaultTenant == "" {
+		opts.Db = sess.Tenant
+	} else {
+		opts.Db = defaultTenant
+	}
+	log.Printf("using tb: %s", tb)
+	opts.Tb = tb
+
+	var ret interface{}
+
+	switch opts.Op {
+
+	case OP_C:
+		ret, err = create(db, opts)
+	case OP_R:
+		ret, err = retrieve[T](db, opts)
+	case OP_U:
+		ret, err = update(db, opts)
+	case OP_D:
+		ret, err = delete(db, opts)
+	case OP_AA:
+		ret, err = associationAssociate(db, opts)
+	case OP_AD:
+		ret, err = associationDissociate(db, opts)
+	default:
+		http.Error(w, "Unknown op: "+opts.Op, http.StatusBadRequest)
+		return nil
+	}
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil
+	}
+
+	json.NewEncoder(w).Encode(ret)
+	return nil
+}
+
 func Handle[T any](r *mux.Router, db *gorm.DB, a T) error {
 	stmt := &gorm.Statement{DB: db}
 	stmt.Parse(a)
@@ -262,87 +341,13 @@ func Handle[T any](r *mux.Router, db *gorm.DB, a T) error {
 
 	logrus.Infof("Registering route %s for CRUD %T", tb, a)
 
-	routemgr.HandleHttp(r, "/"+tb,
-		http.MethodPost,
-		model.PERM_AUTH,
-		func(w http.ResponseWriter, r *http.Request) error {
-			defer func() {
-				r.Body.Close()
-				r := recover()
-				if r != nil {
-					msg := fmt.Sprintf("Recovering from: %v\n%s ", r, string(debug.Stack()))
-					logrus.Warnf(msg)
-					http.Error(w, msg, http.StatusInternalServerError)
-				}
-			}()
-			sess := ctxmgr.Session(r.Context())
-			if sess == nil {
-				http.Error(w, "unauthorized", http.StatusUnauthorized)
-				return nil
-			}
-
-			opts := new(CrudOpts)
-
-			buf := &bytes.Buffer{}
-			io.Copy(buf, r.Body)
-
-			err := json.Unmarshal(buf.Bytes(), opts)
+	r.Name("crud_" + tb).Methods(http.MethodPost).Path("/" + tb).HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			err := handle[T](db, tb, w, r)
 			if err != nil {
-				return err
-			}
-
-			_, ok := sess.Perms[model.PermDef("crud."+tb+"."+opts.Op)]
-			if !ok {
-				_, ok = sess.Perms[model.PERM_ROOT]
-			}
-			if !ok {
-				http.Error(w, "unauthorized", http.StatusUnauthorized)
-				return nil
-			}
-
-			//typeData := reflect.New(tp).Interface()
-			typeData := new(T)
-			bs, _ := json.Marshal(opts.Data)
-			json.Unmarshal(bs, typeData)
-			opts.Data = typeData
-			//no := reflect.New(tp).Interface()
-
-			if defaultTenant == "" {
-				opts.Db = sess.Tenant
-			} else {
-				opts.Db = defaultTenant
-			}
-			log.Printf("using tb: %s", tb)
-			opts.Tb = tb
-
-			var ret interface{}
-
-			switch opts.Op {
-
-			case OP_C:
-				ret, err = create(db, opts)
-			case OP_R:
-				ret, err = retrieve[T](db, opts)
-			case OP_U:
-				ret, err = update(db, opts)
-			case OP_D:
-				ret, err = delete(db, opts)
-			case OP_AA:
-				ret, err = associationAssociate(db, opts)
-			case OP_AD:
-				ret, err = associationDissociate(db, opts)
-			default:
-				http.Error(w, "Unknown op: "+opts.Op, http.StatusBadRequest)
-				return nil
-			}
-
-			if err != nil {
+				logrus.Error(err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return nil
 			}
-
-			json.NewEncoder(w).Encode(ret)
-			return nil
 		})
 
 	return nil

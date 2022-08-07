@@ -64,9 +64,9 @@ func Load() error {
 // 		},
 // 		func(adb *gorm.DB) error {
 // 			for _, mod := range []interface{}{
-// 				&model.SecUser{},
-// 				&model.SecGroup{},
-// 				&model.SecPerm{},
+// 				&fmodel.SecUser{},
+// 				&fmodel.SecGroup{},
+// 				&fmodel.SecPerm{},
 // 			} {
 // 				err := adb.AutoMigrate(mod)
 // 				if err != nil {
@@ -74,23 +74,23 @@ func Load() error {
 // 				}
 // 			}
 
-// 			perm := &model.SecPerm{Name: "*", Val: "*"}
+// 			perm := &fmodel.SecPerm{Name: "*", Val: "*"}
 // 			err := adb.Create(perm).Error
 // 			if err != nil {
 // 				return err
 // 			}
-// 			group := &model.SecGroup{Name: "root", Perms: []*model.SecPerm{perm}}
+// 			group := &fmodel.SecGroup{Name: "root", Perms: []*fmodel.SecPerm{perm}}
 // 			err = adb.Create(group).Error
 // 			if err != nil {
 // 				return err
 // 			}
 // 			enabled := true
 
-// 			user := &model.SecUser{
+// 			user := &fmodel.SecUser{
 // 				Username: "root",
 // 				Hash:     "$argon2id$v=19$m=65536,t=3,p=2$nTPFgXmlMFphn506a/VQ2Q$0Y/KXMMxDb28CzuqGZdShAnNuNs3l3vInJRh3xd5uq4",
 // 				Email:    "root@root.com",
-// 				Enabled:  &enabled, Groups: []*model.SecGroup{group},
+// 				Enabled:  &enabled, Groups: []*fmodel.SecGroup{group},
 // 			}
 
 // 			err = adb.Create(user).Error

@@ -3,11 +3,11 @@ package crudmgr_test
 import (
 	"time"
 
-	"github.com/digitalcircle-com-br/foundation/lib/model"
+	"github.com/digitalcircle-com-br/foundation/lib/fmodel"
 )
 
 type Astr struct {
-	model.BaseVO
+	fmodel.BaseVO
 	Atxt string
 	Adt  time.Time
 }

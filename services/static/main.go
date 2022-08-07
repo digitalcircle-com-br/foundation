@@ -13,7 +13,7 @@ package static
 // 		logrus.Infof("	- %s", file.Name())
 // 	}
 
-// routemgr.HandleHttp("/_config", http.MethodGet, model.PERM_ALL, func(w http.ResponseWriter, r *http.Request) error {
+// routemgr.HandleHttp("/_config", http.MethodGet, fmodel.PERM_ALL, func(w http.ResponseWriter, r *http.Request) error {
 // 	all := make(map[string]interface{})
 // 	err := cfgmgr.Load("client", all)
 // 	if err != nil {

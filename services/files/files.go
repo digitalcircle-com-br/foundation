@@ -13,8 +13,8 @@ import (
 	"github.com/digitalcircle-com-br/foundation/lib/ctxmgr"
 	"github.com/gorilla/mux"
 
+	"github.com/digitalcircle-com-br/foundation/lib/fmodel"
 	"github.com/digitalcircle-com-br/foundation/lib/migration"
-	"github.com/digitalcircle-com-br/foundation/lib/model"
 	"github.com/digitalcircle-com-br/foundation/lib/routemgr"
 	"gorm.io/gorm"
 )
@@ -25,7 +25,7 @@ var Service = new(service)
 
 func (s service) Setup(db *gorm.DB) error {
 	return migration.Run(db, migration.Mig{Id: "files-001", Up: func(db *gorm.DB) error {
-		return db.AutoMigrate(&model.File{})
+		return db.AutoMigrate(&fmodel.File{})
 	},
 	})
 }
@@ -64,7 +64,7 @@ func (s service) Upload(w http.ResponseWriter, r *http.Request) {
 			defer uploadedFile.Close()
 			io.Copy(buf, uploadedFile)
 
-			f := &model.File{
+			f := &fmodel.File{
 				Name:      vv.Filename,
 				Len:       vv.Size,
 				Owner:     sess.Username,
@@ -104,7 +104,7 @@ func (s service) Download(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	f := &model.File{}
+	f := &fmodel.File{}
 	err = db.Where("id = ?", id).First(f).Error
 
 	if err == gorm.ErrRecordNotFound {
@@ -126,7 +126,7 @@ func (s service) Download(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s service) List(w http.ResponseWriter, r *http.Request) {
-	files := make([]model.File, 0)
+	files := make([]fmodel.File, 0)
 
 	sess := ctxmgr.Session(r.Context())
 

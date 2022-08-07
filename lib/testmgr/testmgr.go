@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/digitalcircle-com-br/foundation/lib/core"
-	"github.com/digitalcircle-com-br/foundation/lib/model"
+	"github.com/digitalcircle-com-br/foundation/lib/fmodel"
 	"github.com/digitalcircle-com-br/foundation/lib/redismgr"
 	"github.com/go-redis/redis/v8"
 	"github.com/stretchr/testify/assert"
@@ -108,9 +108,9 @@ func HttpNewAuthRequest(t *testing.T, method string, url string, body []byte, w 
 	assert.NoError(t, err)
 
 	r.Header = http.Header{}
-	r.Header.Set("Cookie", fmt.Sprintf("%s=%s", model.COOKIE_SESSION, sessid))
-	nctx := context.WithValue(r.Context(), model.CTX_REQ, r)
-	nctx = context.WithValue(nctx, model.CTX_RES, w)
+	r.Header.Set("Cookie", fmt.Sprintf("%s=%s", fmodel.COOKIE_SESSION, sessid))
+	nctx := context.WithValue(r.Context(), fmodel.CTX_REQ, r)
+	nctx = context.WithValue(nctx, fmodel.CTX_RES, w)
 
 	return r
 }

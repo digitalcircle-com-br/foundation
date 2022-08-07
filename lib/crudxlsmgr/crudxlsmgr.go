@@ -147,24 +147,30 @@ func processXls(xls *excelize.File, tb string) error {
 	return nil
 }
 
-func UploadExcel(w http.ResponseWriter, r *http.Request) error {
+func UploadExcel(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseMultipartForm(2 << 20)
 	if err != nil {
-		return err
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 	for _, fs := range r.MultipartForm.File {
 		for _, f := range fs {
 			fdesc, err := f.Open()
 			if err != nil {
-				return err
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
 			}
 			xls, err := excelize.OpenReader(fdesc)
 			if err != nil {
-				return err
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
 			}
 			tb := r.URL.Query().Get("table")
 			err = processXls(xls, tb)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 		}
 	}
-	return nil
 }

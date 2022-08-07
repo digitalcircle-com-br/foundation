@@ -9,14 +9,14 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/digitalcircle-com-br/foundation/lib/fmodel"
 	"github.com/digitalcircle-com-br/foundation/lib/migration"
-	"github.com/digitalcircle-com-br/foundation/lib/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
-// se sessionKey will generate one string with tenant and session id.
+// sessionKey will generate one string with tenant and session id.
 func sessionKey(t string, id string) string {
 	return fmt.Sprintf("session:%s:%s", t, id)
 }
@@ -41,7 +41,7 @@ func sessionKeyFromId(rawid string) (t string, sid string, hash []byte, err erro
 }
 
 // SessionSave - persists the session.
-func SessionSave(s *model.Session) (id string, err error) {
+func SessionSave(s *fmodel.Session) (id string, err error) {
 	sid := uuid.NewString()
 	s.Sessionid = sid
 	sessbs, _ := json.Marshal(s)
@@ -54,7 +54,7 @@ func SessionSave(s *model.Session) (id string, err error) {
 
 	k := sessionKey(s.Tenant, s.Sessionid)
 
-	rawSess := model.RawSession{Id: k, Data: sessbs}
+	rawSess := fmodel.RawSession{Id: k, Data: sessbs}
 	err = db.Clauses(clause.OnConflict{
 		UpdateAll: true,
 	}).Create(&rawSess).Error
@@ -62,8 +62,8 @@ func SessionSave(s *model.Session) (id string, err error) {
 	return
 }
 
-func SessionLoad(rawid string) (sess *model.Session, err error) {
-	var rawSession model.RawSession
+func SessionLoad(rawid string) (sess *fmodel.Session, err error) {
+	var rawSession fmodel.RawSession
 	t, id, hash, err := sessionKeyFromId(rawid)
 	if err != nil {
 		return
@@ -84,7 +84,7 @@ func SessionLoad(rawid string) (sess *model.Session, err error) {
 		return
 	}
 
-	ret := &model.Session{}
+	ret := &fmodel.Session{}
 	err = json.Unmarshal(rawSession.Data, ret)
 	return ret, err
 }
@@ -95,15 +95,15 @@ func SessionDel(rawid string) (err error) {
 		return
 	}
 	k := sessionKey(t, id)
-	return db.Where("id = ?", k).Delete(&model.RawSession{}).Error
+	return db.Where("id = ?", k).Delete(&fmodel.RawSession{}).Error
 
 }
 func SessionDelTenantAndId(t, id string) (err error) {
 	k := sessionKey(t, id)
-	return db.Where("id = ?", k).Delete(&model.RawSession{}).Error
+	return db.Where("id = ?", k).Delete(&fmodel.RawSession{}).Error
 }
 
-func SessionEnc(s *model.Session) (id string, sessbs []byte) {
+func SessionEnc(s *fmodel.Session) (id string, sessbs []byte) {
 	sessbs, _ = json.Marshal(s)
 	hasher := md5.New()
 	hasher.Write(sessbs)
@@ -137,7 +137,7 @@ var db *gorm.DB
 func Setup(d *gorm.DB) error {
 	db = d
 	return migration.Run(db, migration.Mig{Id: "session-001", Up: func(db *gorm.DB) error {
-		return db.AutoMigrate(model.RawSession{})
+		return db.AutoMigrate(fmodel.RawSession{})
 	},
 	})
 }
