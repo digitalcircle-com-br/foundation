@@ -18,6 +18,8 @@ github.com/digitalcircle-com-br/buildinfo v0.0.0-20220307112458-bf70fcc17929/go.
 github.com/fatih/color v1.7.0 h1:DkWD4oS2D8LGGgTQ6IvwJJXSL5Vp2ffcQg58nFV38Ys=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fsnotify/fsnotify v1.4.9 h1:hsms1Qyu0jgnwNXIxa+/V/PDsU6CfLf6CNO8H7IWoS4=
+github.com/go-gormigrate/gormigrate/v2 v2.0.2 h1:YV4Lc5yMQX8ahVW0ENPq6sPhrhdkGukc6fPRYmZ1R6Y=
+github.com/go-gormigrate/gormigrate/v2 v2.0.2/go.mod h1:vld36QpBTfTzLealsHsmQQJK5lSwJt6wiORv+oFX8/I=
 github.com/go-redis/redis/v8 v8.11.5 h1:AcZZR7igkdvfVmQTPnu9WE37LRrO/YrBH5zWyjDC0oI=
 github.com/go-redis/redis/v8 v8.11.5/go.mod h1:gREzHqY1hg6oD9ngVRbLStwAWKhA0FEgq8Jd4h5lpwo=
 github.com/go-sql-driver/mysql v1.6.0 h1:BCTh4TKNUYmOmMUcQ3IipzF5prigylS7XXjEkfCHuOE=

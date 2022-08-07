@@ -4,20 +4,20 @@ import (
 	"context"
 	"errors"
 	"github.com/digitalcircle-com-br/foundation/lib/apiadapter"
-	"net/http"
-	"strings"
-	"time"
-
 	"github.com/digitalcircle-com-br/foundation/lib/authmgr"
 	"github.com/digitalcircle-com-br/foundation/lib/ctxmgr"
 	"github.com/digitalcircle-com-br/foundation/lib/fmodel"
-	"github.com/digitalcircle-com-br/foundation/lib/migration"
 	"github.com/digitalcircle-com-br/foundation/lib/sessionmgr"
 	"github.com/digitalcircle-com-br/foundation/services/auth/hash"
+	"github.com/go-gormigrate/gormigrate/v2"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"log"
+	"net/http"
+	"strings"
+	"time"
 )
 
 var ErroNotAuthorized = errors.New("not authorized")
@@ -134,46 +134,54 @@ func (s *service) CheckPerm(ctx context.Context, lr *fmodel.EMPTY) (out bool, er
 func Setup(r *mux.Router, db *gorm.DB) error {
 	var err error
 	DB = db
-	err = migration.Run(db, migration.Mig{Id: "auth001", Up: func(db *gorm.DB) error {
+	m := gormigrate.New(db, gormigrate.DefaultOptions, []*gormigrate.Migration{
+		{
+			ID: "auth001",
+			Migrate: func(db *gorm.DB) error {
 
-		for _, mod := range []interface{}{
-			&fmodel.SecUser{},
-			&fmodel.SecGroup{},
-			&fmodel.SecPerm{},
-		} {
-			err := db.AutoMigrate(mod)
-			if err != nil {
-				return err
-			}
-		}
+				for _, mod := range []interface{}{
+					&fmodel.SecUser{},
+					&fmodel.SecGroup{},
+					&fmodel.SecPerm{},
+				} {
+					err := db.AutoMigrate(mod)
+					if err != nil {
+						return err
+					}
+				}
 
-		perm := &fmodel.SecPerm{Name: "*", Val: "*"}
-		err := db.Create(perm).Error
-		if err != nil {
-			return err
-		}
-		group := &fmodel.SecGroup{Name: "root", Perms: []*fmodel.SecPerm{perm}}
-		err = db.Create(group).Error
-		if err != nil {
-			return err
-		}
-		enabled := true
+				perm := &fmodel.SecPerm{Name: "*", Val: "*"}
+				err := db.Create(perm).Error
+				if err != nil {
+					return err
+				}
+				group := &fmodel.SecGroup{Name: "root", Perms: []*fmodel.SecPerm{perm}}
+				err = db.Create(group).Error
+				if err != nil {
+					return err
+				}
+				enabled := true
 
-		user := &fmodel.SecUser{
-			Username: "root",
-			Hash:     "$argon2id$v=19$m=65536,t=3,p=2$nTPFgXmlMFphn506a/VQ2Q$0Y/KXMMxDb28CzuqGZdShAnNuNs3l3vInJRh3xd5uq4",
-			Email:    "root@root.com",
-			Tenant:   "foundation",
-			Enabled:  &enabled, Groups: []*fmodel.SecGroup{group},
-		}
+				user := &fmodel.SecUser{
+					Username: "root",
+					Hash:     "$argon2id$v=19$m=65536,t=3,p=2$nTPFgXmlMFphn506a/VQ2Q$0Y/KXMMxDb28CzuqGZdShAnNuNs3l3vInJRh3xd5uq4",
+					Email:    "root@root.com",
+					Tenant:   "foundation",
+					Enabled:  &enabled, Groups: []*fmodel.SecGroup{group},
+				}
 
-		err = db.Create(user).Error
-		if err != nil {
-			return err
-		}
-		return nil
-	},
+				err = db.Create(user).Error
+				if err != nil {
+					return err
+				}
+				return nil
+			},
+		},
 	})
+
+	if err = m.Migrate(); err != nil {
+		log.Fatalf("Could not migrate: %v", err)
+	}
 
 	r.Name("auth.login").Methods(http.MethodPost).Path("/login").Handler(apiadapter.Adapt(Service.Login))
 	r.Name("auth.logout").Methods(http.MethodGet).Path("/logout").Handler(apiadapter.Adapt(Service.Login))

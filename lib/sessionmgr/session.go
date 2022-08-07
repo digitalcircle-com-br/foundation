@@ -8,11 +8,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/digitalcircle-com-br/foundation/lib/fmodel"
+	"github.com/go-gormigrate/gormigrate/v2"
 	"net/http"
 	"strings"
 
-	"github.com/digitalcircle-com-br/foundation/lib/fmodel"
-	"github.com/digitalcircle-com-br/foundation/lib/migration"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -139,10 +139,22 @@ var db *gorm.DB
 
 func Setup(d *gorm.DB) error {
 	db = d
-	return migration.Run(db, migration.Mig{Id: "session-001", Up: func(db *gorm.DB) error {
-		return db.AutoMigrate(fmodel.RawSession{})
-	},
+
+	m := gormigrate.New(db, gormigrate.DefaultOptions, []*gormigrate.Migration{
+		// create persons table
+		{
+			ID: "f8n.session-001",
+			Migrate: func(tx *gorm.DB) error {
+				return db.AutoMigrate(fmodel.RawSession{})
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
 	})
+
+	return m.Migrate()
+
 }
 
 func Req(c context.Context) *http.Request {

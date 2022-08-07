@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/digitalcircle-com-br/foundation/lib/ctxmgr"
-	"github.com/digitalcircle-com-br/foundation/lib/migration"
+	"github.com/go-gormigrate/gormigrate/v2"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -26,12 +26,15 @@ var db *gorm.DB
 
 func Setup(pdb *gorm.DB) error {
 	db = pdb
-	return migration.Run(db, migration.Mig{
-		Id: "audit-0001",
-		Up: func(db *gorm.DB) error {
-			return db.AutoMigrate(AuditEntry{})
+	m := gormigrate.New(db, gormigrate.DefaultOptions, []*gormigrate.Migration{
+		{
+			ID: "audit-0001",
+			Migrate: func(db *gorm.DB) error {
+				return db.AutoMigrate(AuditEntry{})
+			},
 		},
 	})
+	return m.Migrate()
 }
 
 func Add(r *http.Request) *http.Request {
