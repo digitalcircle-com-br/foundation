@@ -32,6 +32,7 @@ type AuthRequest struct {
 	Login    string `json:"login"`
 	Password string `json:"password"`
 }
+
 type AuthResponse struct {
 	SessionID string `json:"sessionid"`
 	Tenant    string `json:"tenant"`

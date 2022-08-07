@@ -2,11 +2,13 @@ package sessionmgr
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/digitalcircle-com-br/foundation/lib/fmodel"
@@ -98,6 +100,7 @@ func SessionDel(rawid string) (err error) {
 	return db.Where("id = ?", k).Delete(&fmodel.RawSession{}).Error
 
 }
+
 func SessionDelTenantAndId(t, id string) (err error) {
 	k := sessionKey(t, id)
 	return db.Where("id = ?", k).Delete(&fmodel.RawSession{}).Error
@@ -140,4 +143,32 @@ func Setup(d *gorm.DB) error {
 		return db.AutoMigrate(fmodel.RawSession{})
 	},
 	})
+}
+
+func Req(c context.Context) *http.Request {
+	raw := c.Value(fmodel.CTX_REQ)
+	return raw.(*http.Request)
+}
+func SessionID(c context.Context) string {
+	ck, err := Req(c).Cookie(string(fmodel.COOKIE_SESSION))
+	if err != nil {
+		return ""
+	}
+	return ck.Value
+}
+func Session(c context.Context) *fmodel.Session {
+	rawsession := c.Value(fmodel.CTX_SESSION)
+	if rawsession != nil {
+		return rawsession.(*fmodel.Session)
+	}
+	sid := SessionID(c)
+	if sid == "" {
+		return nil
+	}
+	ret, err := SessionLoad(sid)
+	if err != nil {
+		return nil
+	}
+	return ret
+
 }

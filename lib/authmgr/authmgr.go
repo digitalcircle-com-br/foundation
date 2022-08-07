@@ -28,7 +28,6 @@ func GetPerm(rname string) fmodel.PermDef {
 }
 
 func MWAuthorize(h http.Handler) http.Handler {
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		perm := GetPerm(mux.CurrentRoute(r).GetName())
 		logrus.Debugf("Calling: Perm:%s - Route:%s", string(perm), r.URL.String())

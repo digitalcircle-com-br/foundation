@@ -14,6 +14,7 @@ import (
 )
 
 var mx sync.RWMutex
+
 var dbs map[string]*gorm.DB = make(map[string]*gorm.DB)
 
 func AddDb(s string, db *gorm.DB) {

@@ -15,7 +15,6 @@ import (
 
 	"github.com/digitalcircle-com-br/foundation/lib/fmodel"
 	"github.com/digitalcircle-com-br/foundation/lib/migration"
-	"github.com/digitalcircle-com-br/foundation/lib/routemgr"
 	"gorm.io/gorm"
 )
 
@@ -135,7 +134,8 @@ func (s service) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db, err := ctxmgr.Db(r.Context())
-	if routemgr.IfErr(w, err) {
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -159,7 +159,8 @@ func (s service) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = tx.Find(&files).Error
-	if routemgr.IfErr(w, err) {
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
