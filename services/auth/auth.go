@@ -21,9 +21,14 @@ import (
 
 var ErroNotAuthorized = errors.New("not authorized")
 
-type service struct{}
+type service struct {
+	LoginForceUseOfSSL bool
+}
 
-var Service = new(service)
+//var Service = new(service)
+var Service *service = &service{
+	LoginForceUseOfSSL: true,
+}
 
 var DB *gorm.DB
 
@@ -125,13 +130,19 @@ func (s *service) Login(ctx context.Context, lr *AuthRequest) (out *model.EMPTY,
 	domain := strings.Join(strings.Split(req.URL.Hostname(), ".")[1:], ".")
 	ret := new(AuthResponse)
 	ck := http.Cookie{
-		Path:     "/",
-		Domain:   domain,
-		Name:     string(model.COOKIE_SESSION),
-		Value:    id,
-		Expires:  time.Now().Add(time.Hour * 24 * 365 * 100),
-		Secure:   true,
-		SameSite: http.SameSiteNoneMode,
+		Path:    "/",
+		Domain:  domain,
+		Name:    string(model.COOKIE_SESSION),
+		Value:   id,
+		Expires: time.Now().Add(time.Hour * 24 * 365 * 100),
+		//Secure:   true,
+		//SameSite: http.SameSiteNoneMode,
+	}
+
+	//[Alessandro] -- allow connection from http without SSL
+	if s.LoginForceUseOfSSL {
+		ck.Secure = true
+		ck.SameSite = http.SameSiteNoneMode
 	}
 
 	http.SetCookie(res, &ck)
@@ -180,6 +191,7 @@ func Run() error {
 	}
 
 	// Add routes functions
+	//[Alessandro] - add SSL setup options
 	routemgr.Handle("/login", http.MethodPost, model.PERM_ALL, Service.Login)
 	routemgr.Handle("/logout", http.MethodGet, model.PERM_AUTH, Service.Logout)
 	routemgr.Handle("/check", http.MethodGet, model.PERM_AUTH, Service.Check)

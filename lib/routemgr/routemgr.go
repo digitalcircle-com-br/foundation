@@ -3,6 +3,7 @@ package routemgr
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -19,8 +20,18 @@ func Reset() {
 	router = nil
 }
 
+//[Alessandro] -- add CORS support
+func ArrayContains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
 //Router returns mux.Router, if it is nil, it configures one with default handlers
-func Router() *mux.Router {
+func Router(CORS_ALLOWED_ORIGINS ...*[]string) *mux.Router {
 	if router == nil {
 		router = mux.NewRouter()
 		router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -59,6 +70,26 @@ func Router() *mux.Router {
 
 				}
 				r = r.WithContext(nctx)
+
+				//[Alessandro] -- add CORS support
+				fmt.Println("Checking CORS: ", r.Header.Get("Origin"))
+				if len(r.Header.Get("Origin")) == 0 {
+					fmt.Println("CORS HEADERS NOT WRITTEN (Possibly GET request or same origin, not need headers)...")
+				} else if len(CORS_ALLOWED_ORIGINS) == 0 {
+					fmt.Println("CORS ALLOWED - ALWAYS ALLOW!!!")
+					w.Header().Add("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+					w.Header().Add("Access-Control-Allow-Credentials", "true")
+				} else if CORS_ALLOWED_ORIGINS[0] == nil {
+					fmt.Println("CORS ALLOWED - NIL LIST!!!")
+					w.Header().Add("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+					w.Header().Add("Access-Control-Allow-Credentials", "true")
+				} else if CORS_ALLOWED_ORIGINS[0] != nil && ArrayContains(*CORS_ALLOWED_ORIGINS[0], r.Header.Get("Origin")) {
+					fmt.Println("CORS ALLOWED - CUSTOM ALLOWED!!!")
+					w.Header().Add("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+					w.Header().Add("Access-Control-Allow-Credentials", "true")
+				} else {
+					fmt.Println("CORS HEADERS NOT WRITTEN (ERROR)")
+				}
 				h.ServeHTTP(w, r)
 			})
 		})
@@ -66,10 +97,15 @@ func Router() *mux.Router {
 	return router
 }
 
-func Handle[TIN, TOUT any](hpath string, method string, perm model.PermDef, f func(context.Context, TIN) (TOUT, error)) {
+func Handle[TIN, TOUT any](hpath string, method string, perm model.PermDef, f func(context.Context, TIN) (TOUT, error),
+	CORS_ALLOWED_ORIGINS ...*[]string) {
+	var cors *[]string = nil
+	if len(CORS_ALLOWED_ORIGINS) > 0 {
+		cors = CORS_ALLOWED_ORIGINS[0]
+	}
 	core.Log("Adding handler: %s:%s[%s]", "QUEUE", hpath, perm)
 
-	Router().Name(string(perm)).Methods(method).PathPrefix(hpath).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	Router(cors).Name(string(perm)).Methods(method).PathPrefix(hpath).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		done := false
 		nctx := context.WithValue(r.Context(), model.CTX_DONE, func() {
@@ -108,11 +144,16 @@ func Handle[TIN, TOUT any](hpath string, method string, perm model.PermDef, f fu
 	})
 }
 
-func HandleHttp(hpath string, method string, perm model.PermDef, f func(w http.ResponseWriter, r *http.Request) error) {
+func HandleHttp(hpath string, method string, perm model.PermDef, f func(w http.ResponseWriter, r *http.Request) error,
+	CORS_ALLOWED_ORIGINS ...*[]string) {
+	var cors *[]string = nil
+	if len(CORS_ALLOWED_ORIGINS) > 0 {
+		cors = CORS_ALLOWED_ORIGINS[0]
+	}
 	core.Log("Adding handler: %s:%s[%s]", method, hpath, perm)
 	switch {
 	case strings.HasSuffix(hpath, "/"):
-		Router().Name(string(perm)).Methods(method).PathPrefix(hpath).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		Router(cors).Name(string(perm)).Methods(method).PathPrefix(hpath).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			err := f(w, r)
 			if err != nil {
 				core.Err(err)
@@ -120,7 +161,7 @@ func HandleHttp(hpath string, method string, perm model.PermDef, f func(w http.R
 			}
 		})
 	default:
-		Router().Name(string(perm)).Methods(method).Path(hpath).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		Router(cors).Name(string(perm)).Methods(method).Path(hpath).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			err := f(w, r)
 			if err != nil {
 				core.Err(err)
