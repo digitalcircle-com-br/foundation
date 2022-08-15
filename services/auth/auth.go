@@ -3,6 +3,11 @@ package auth
 import (
 	"context"
 	"errors"
+	"log"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/digitalcircle-com-br/foundation/lib/apiadapter"
 	"github.com/digitalcircle-com-br/foundation/lib/authmgr"
 	"github.com/digitalcircle-com-br/foundation/lib/ctxmgr"
@@ -14,11 +19,13 @@ import (
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"log"
-	"net/http"
-	"strings"
-	"time"
 )
+
+type AuthOpts struct {
+	UseSecure bool
+}
+
+var opts AuthOpts
 
 var ErroNotAuthorized = errors.New("not authorized")
 
@@ -74,13 +81,16 @@ func (s *service) Login(ctx context.Context, lr *AuthRequest) (out *fmodel.EMPTY
 	domain := strings.Join(strings.Split(req.URL.Hostname(), ".")[1:], ".")
 	ret := new(AuthResponse)
 	ck := http.Cookie{
-		Path:     "/",
-		Domain:   domain,
-		Name:     string(fmodel.COOKIE_SESSION),
-		Value:    id,
-		Expires:  time.Now().Add(time.Hour * 24 * 365 * 100),
-		Secure:   true,
-		SameSite: http.SameSiteNoneMode,
+		Path:    "/",
+		Domain:  domain,
+		Name:    string(fmodel.COOKIE_SESSION),
+		Value:   id,
+		Expires: time.Now().Add(time.Hour * 24 * 365 * 100),
+	}
+
+	if opts.UseSecure {
+		ck.Secure = true
+		ck.SameSite = http.SameSiteNoneMode
 	}
 
 	http.SetCookie(res, &ck)
@@ -131,7 +141,12 @@ func (s *service) CheckPerm(ctx context.Context, lr *fmodel.EMPTY) (out bool, er
 	return ok, nil
 }
 
-func Setup(r *mux.Router, db *gorm.DB) error {
+func Setup(r *mux.Router, db *gorm.DB, nOpts ...AuthOpts) error {
+	if nOpts != nil && len(nOpts) > 0 {
+		opts = nOpts[0]
+	} else {
+		opts = AuthOpts{UseSecure: true}
+	}
 	var err error
 	DB = db
 	m := gormigrate.New(db, gormigrate.DefaultOptions, []*gormigrate.Migration{

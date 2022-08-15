@@ -3,15 +3,61 @@ package apiadapter
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+	"strings"
+
 	"github.com/digitalcircle-com-br/foundation/lib/authmgr"
 	"github.com/digitalcircle-com-br/foundation/lib/core"
 	"github.com/digitalcircle-com-br/foundation/lib/fmodel"
 	"github.com/digitalcircle-com-br/foundation/lib/sessionmgr"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
-	"net/http"
-	"strings"
 )
+
+var allowedHeaders = "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token"
+
+type CorsOpts struct {
+	Origins []string
+}
+
+func findStrInSlice(s []string, e string) string {
+	for _, a := range s {
+		if a == e {
+			return e
+		}
+	}
+	return ""
+}
+
+var opts CorsOpts
+
+func SetCorsOpts(o CorsOpts) {
+	opts = o
+}
+func MWCors(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if origin := findStrInSlice(opts.Origins, r.Header.Get("Origin")); origin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+			w.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
+			w.Header().Set("Access-Control-Expose-Headers", "Authorization")
+			w.Header().Add("Access-Control-Allow-Credentials", "true")
+		}
+
+		h.ServeHTTP(w, r)
+	})
+}
+
+func AdaptErr(h func(response http.ResponseWriter, request *http.Request) error) func(response http.ResponseWriter, request *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := h(w, r)
+		if err != nil {
+			logrus.Warnf("error processing: %s", err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+}
 
 func Adapt[TIN, TOUT any](f func(context.Context, TIN) (TOUT, error)) http.Handler {
 

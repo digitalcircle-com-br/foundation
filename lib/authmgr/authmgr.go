@@ -2,11 +2,12 @@ package authmgr
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/digitalcircle-com-br/foundation/lib/fmodel"
 	"github.com/digitalcircle-com-br/foundation/lib/sessionmgr"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
-	"net/http"
 )
 
 var permsMap map[string]fmodel.PermDef = map[string]fmodel.PermDef{}
