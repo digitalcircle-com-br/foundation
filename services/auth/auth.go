@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -48,6 +49,12 @@ type AuthResponse struct {
 func (s *service) Login(ctx context.Context, lr *AuthRequest) (out *fmodel.EMPTY, err error) {
 
 	user := &fmodel.SecUser{}
+	if lr == nil {
+		return nil, errors.New("request cannot be nil")
+	}
+	if DB == nil {
+		return nil, errors.New("DB cannot be nil")
+	}
 
 	err = DB.Preload("Groups.Perms").Preload(clause.Associations).Where("username = ? and enabled = true", lr.Login).First(user).Error
 
@@ -147,6 +154,9 @@ func Setup(r *mux.Router, db *gorm.DB, nOpts ...AuthOpts) error {
 	} else {
 		opts = AuthOpts{UseSecure: true}
 	}
+	if db == nil {
+		return errors.New("db cannot be nil")
+	}
 	var err error
 	DB = db
 	m := gormigrate.New(db, gormigrate.DefaultOptions, []*gormigrate.Migration{
@@ -193,20 +203,28 @@ func Setup(r *mux.Router, db *gorm.DB, nOpts ...AuthOpts) error {
 			},
 		},
 	})
-
+	if m == nil {
+		log.Printf("no migration found")
+		return nil
+	}
 	if err = m.Migrate(); err != nil {
 		log.Fatalf("Could not migrate: %v", err)
 	}
 
 	r.Name("auth.login").Methods(http.MethodPost).Path("/login").Handler(apiadapter.Adapt(Service.Login))
-	r.Name("auth.logout").Methods(http.MethodGet).Path("/logout").Handler(apiadapter.Adapt(Service.Login))
-	r.Name("auth.check").Methods(http.MethodGet).Path("/check").Handler(apiadapter.Adapt(Service.Login))
-	r.Name("auth.checkperm").Methods(http.MethodGet).Path("/checkperm").Handler(apiadapter.Adapt(Service.Login))
+	r.Name("auth.logout").Methods(http.MethodGet).Path("/logout").Handler(apiadapter.Adapt(Service.Logout))
+	r.Name("auth.check").Methods(http.MethodGet).Path("/check").Handler(apiadapter.Adapt(Service.Check))
+	r.Name("auth.checkperm").Methods(http.MethodGet).Path("/checkperm").Handler(apiadapter.Adapt(Service.CheckPerm))
 
 	authmgr.AddPerm("auth.login", fmodel.PERM_ALL)
 	authmgr.AddPerm("auth.logout", fmodel.PERM_AUTH)
 	authmgr.AddPerm("auth.check", fmodel.PERM_AUTH)
 	authmgr.AddPerm("auth.checkperm", fmodel.PERM_AUTH)
+
+	err = db.Exec("select 1+1").Error
+	if err != nil {
+		return fmt.Errorf("error acessing db: %s", err.Error())
+	}
 
 	return err
 }
