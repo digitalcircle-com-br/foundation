@@ -42,7 +42,7 @@ func MWCors(h http.Handler) http.Handler {
 			w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 			w.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
 			w.Header().Set("Access-Control-Expose-Headers", "Authorization")
-			w.Header().Add("Access-Control-Allow-Credentials", "true")
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
 		}
 
 		h.ServeHTTP(w, r)
