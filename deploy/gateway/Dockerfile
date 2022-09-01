@@ -1,4 +1,4 @@
-from scratch
+FROM scratch
 
 ADD ./main /main
 

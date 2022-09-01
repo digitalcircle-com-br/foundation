@@ -61,11 +61,14 @@ func UpdatePassword(ctx context.Context, request *UpdatePasswordRequest) (interf
 		return nil, errors.New("password cannot be the old password")
 	}
 
+/*Run configures mux.Router and start listening to redis's request queue identified by the key "queue: authmgr" */
 	passwordHash, err := hash.Hash(request.NewPassword)
 
 	if err != nil {
 		return nil, err
 	}
+
+	// Middleware to log incoming requests
 
 	dbResult = dbResult.Update("hash", passwordHash)
 
@@ -86,3 +89,4 @@ func Setup(r *mux.Router, db *gorm.DB) error {
 
 	return nil
 }
+>>>>>>> main

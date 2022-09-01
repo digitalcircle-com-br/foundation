@@ -189,6 +189,22 @@ func Setup(r *mux.Router, d *gorm.DB) error {
 // 	routemgr.Router().Name("file.del").Methods(http.MethodPost).Path("del").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 // 	runmgr.RunABlock()
 
+// 	return err
+
+// }
+
+// func Run(db *gorm.DB) error {
+// 	core.Init("files")
+// 	err := Service.Setup(db)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	routemgr.Router().Name("file.upload").Methods(http.MethodPost).Path("upload").HandlerFunc(Service.Download)
+// 	routemgr.Router().Name("file.download").Methods(http.MethodGet).Path("download").HandlerFunc(Service.Download)
+// 	routemgr.Router().Name("file.list").Methods(http.MethodPost).Path("list").HandlerFunc(Service.List)
+// 	routemgr.Router().Name("file.del").Methods(http.MethodPost).Path("del").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+// 	runmgr.RunABlock()
+
 // 	return nil
 
 // }
