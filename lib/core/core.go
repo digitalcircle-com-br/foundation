@@ -2,36 +2,36 @@ package core
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
-	"runtime/debug"
 	"syscall"
 	"time"
 
 	_ "github.com/breml/rootcerts"
 	"github.com/digitalcircle-com-br/buildinfo"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 func init() {
-	Log("Initiating foundation v0.0.11")
+	logrus.Info("Initiating foundation v0.0.11")
 }
 
 func Ctx() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), time.Second*120)
 }
 
-//IsDocker returns if the env is a docker container
+// IsDocker returns if the env is a docker container
 func IsDocker() bool {
 	_, err := os.Stat("/.dockerenv")
 	return err == nil
 }
 
 var svcName = "foundation"
+
 var svcId = NewUUID()
 
 var sigCh = make(chan os.Signal)
@@ -49,7 +49,7 @@ func SvcName() string {
 	return svcName
 }
 
-//Init sets service name, OS Signals and logs initialization info
+// Init sets service name, OS Signals and logs initialization info
 func Init(s string) {
 	svcName = s
 	signal.Notify(sigCh, syscall.SIGTERM, syscall.SIGINT)
@@ -60,44 +60,40 @@ func Init(s string) {
 		os.Exit(0)
 	}()
 	if IsDocker() {
-		Log("Initiating Container for: %s", svcName)
+		logrus.Info("Initiating Container for: %s", svcName)
 	} else {
-		Log("Initiating Service: %s", svcName)
+		logrus.Info("Initiating Service: %s", svcName)
 	}
 	wd, _ := os.Getwd()
 	abswd, _ := filepath.Abs(wd)
-	Log("Running from %s", abswd)
-	Log(buildinfo.String())
+	logrus.Info("Running from %s", abswd)
+	logrus.Info(buildinfo.String())
 }
 
-// Log prints the format string s, using p as format arguments, to stderr with prefix "LOG"
-func Log(s string, p ...interface{}) {
+// func Log(s string, p ...interface{}) {
 
-	log.Printf(fmt.Sprintf("LOG [%s] - %s", svcName, s), p...)
-}
+// 	log.Printf(fmt.Sprintf("LOG [%s] - %s", svcName, s), p...)
+// }
 
-// Warn prints the format string s, using p as format arguments, to stderr with prefix "WARN"
-func Warn(s string, p ...interface{}) {
-	bs := debug.Stack()
-	log.Printf(fmt.Sprintf("WARN [%s] - %s\n\t%s", svcName, s, string(bs)), p...)
-	//log.Printf(fmt.Sprintf("WARN [%s] - %s", svcName, s), p...)
+// func Warn(s string, p ...interface{}) {
+// 	bs := debug.Stack()
+// 	log.Printf(fmt.Sprintf("WARN [%s] - %s\n\t%s", svcName, s, string(bs)), p...)
+// 	//log.Printf(fmt.Sprintf("WARN [%s] - %s", svcName, s), p...)
 
-}
+// }
 
-// Debug prints the format string s, using p as format arguments, to stderr with prefix "DBG"
-func Debug(s string, p ...interface{}) {
-	log.Printf(fmt.Sprintf("DBG [%s] - %s", svcName, s), p...)
-}
+// func Debug(s string, p ...interface{}) {
+// 	log.Printf(fmt.Sprintf("DBG [%s] - %s", svcName, s), p...)
+// }
 
-//Fatal wraps log.Fatal
-func Fatal(s ...interface{}) {
-	log.Fatal(s...)
-}
+// func Fatal(s ...interface{}) {
+// 	log.Fatal(s...)
+// }
 
-//Err logs err with Log
+// Err logs err with Log
 func Err(err error) {
 	if err != nil {
-		Log("Error: %s", err.Error())
+		logrus.Warnf("Error: %s", err.Error())
 	}
 }
 
@@ -106,7 +102,7 @@ func NewUUID() string {
 	return uuid.NewString()
 }
 
-//LogWriter returns io.Writer from log package
+// LogWriter returns io.Writer from log package
 func LogWriter() io.Writer {
 	return log.Default().Writer()
 }

@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/digitalcircle-com-br/foundation/lib/core"
-	"github.com/digitalcircle-com-br/foundation/lib/routemgr"
 )
 
 func Init(s string) {
@@ -47,15 +46,13 @@ func (i *InMemResponseWriter) Bytes() []byte {
 	return i.b.Bytes()
 }
 
-//RunS starts a http.Server on 0.0.0.0:8080 with mux.Router as handler
-func RunS() error {
-	return http.ListenAndServe(":8080", routemgr.Router())
-}
+// func RunS() error {
+// 	return http.ListenAndServe(":8080", routemgr.Router())
+// }
 
-//RunABlock wraps RunRedis
-func RunABlock() error {
-	return RunRedis()
-}
+// func RunABlock() error {
+// 	return RunRedis()
+// }
 
 // func Router() *mux.Router {
 // 	return asynchttp.Router()

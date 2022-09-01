@@ -1,26 +1,21 @@
 package setup
 
 import (
-	"fmt"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/digitalcircle-com-br/foundation/lib/core"
-	"github.com/digitalcircle-com-br/foundation/lib/dbmgr"
-	"github.com/digitalcircle-com-br/foundation/lib/model"
 	"github.com/digitalcircle-com-br/foundation/lib/redismgr"
 	"github.com/digitalcircle-com-br/foundation/services/auth/hash"
-	"gorm.io/gorm"
+	"github.com/sirupsen/logrus"
 )
 
-//loadRedis scans "keys" directory and set keys in redis based on filenames
+// loadRedis scans "keys" directory and set keys in redis based on filenames
 func loadRedis() error {
 	return filepath.WalkDir("keys", func(path string, d fs.DirEntry, err error) error {
 		if !d.IsDir() {
-			core.Log("%s - %s", path, d.Name())
+			logrus.Infof("%s - %s", path, d.Name())
 			kname := strings.Replace(path, "keys/", "", 1)
 			kname = strings.Replace(kname, "/", ":", -1)
 			ext := filepath.Ext(kname)
@@ -39,14 +34,14 @@ func loadRedis() error {
 	})
 }
 
-//cleanRedis scans "keys" directory and remove keys from redis based on filenames
+// cleanRedis scans "keys" directory and remove keys from redis based on filenames
 func cleanRedis() error {
 	return filepath.WalkDir("keys", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if !d.IsDir() {
-			core.Log("%s - %s", path, d.Name())
+			logrus.Infof("%s - %s", path, d.Name())
 			kname := strings.Replace(path, "keys/", "", 1)
 			kname = strings.Replace(kname, "/", ":", -1)
 			redismgr.Del(kname)
@@ -56,113 +51,112 @@ func cleanRedis() error {
 	})
 }
 
-//Clean deletes keys from redis
+// Clean deletes keys from redis
 func Clean() error {
 	return cleanRedis()
 }
 
-//Load create keys in redis
+// Load create keys in redis
 func Load() error {
 	return loadRedis()
 }
 
-//prepareMigrations adds migration to model.SecUser, model.SecGroup and model.SecPerm models in the migration queue
-func prepareMigrations() {
-	dbmgr.MigrationAdd("auth-00001", "Creates Authentication DB",
-		func(s string) bool {
-			return s == "auth"
-		},
-		func(adb *gorm.DB) error {
-			for _, mod := range []interface{}{
-				&model.SecUser{},
-				&model.SecGroup{},
-				&model.SecPerm{},
-			} {
-				err := adb.AutoMigrate(mod)
-				if err != nil {
-					return err
-				}
-			}
+// func prepareMigrations() {
+// 	dbmgr.MigrationAdd("auth-00001", "Creates Authentication DB",
+// 		func(s string) bool {
+// 			return s == "auth"
+// 		},
+// 		func(adb *gorm.DB) error {
+// 			for _, mod := range []interface{}{
+// 				&fmodel.SecUser{},
+// 				&fmodel.SecGroup{},
+// 				&fmodel.SecPerm{},
+// 			} {
+// 				err := adb.AutoMigrate(mod)
+// 				if err != nil {
+// 					return err
+// 				}
+// 			}
 
-			perm := &model.SecPerm{Name: "*", Val: "*"}
-			err := adb.Create(perm).Error
-			if err != nil {
-				return err
-			}
-			group := &model.SecGroup{Name: "root", Perms: []*model.SecPerm{perm}}
-			err = adb.Create(group).Error
-			if err != nil {
-				return err
-			}
-			enabled := true
+// 			perm := &fmodel.SecPerm{Name: "*", Val: "*"}
+// 			err := adb.Create(perm).Error
+// 			if err != nil {
+// 				return err
+// 			}
+// 			group := &fmodel.SecGroup{Name: "root", Perms: []*fmodel.SecPerm{perm}}
+// 			err = adb.Create(group).Error
+// 			if err != nil {
+// 				return err
+// 			}
+// 			enabled := true
 
-			user := &model.SecUser{
-				Username: "root",
-				Hash:     "$argon2id$v=19$m=65536,t=3,p=2$nTPFgXmlMFphn506a/VQ2Q$0Y/KXMMxDb28CzuqGZdShAnNuNs3l3vInJRh3xd5uq4",
-				Email:    "root@root.com",
-				Enabled:  &enabled, Groups: []*model.SecGroup{group},
-			}
+// 			user := &fmodel.SecUser{
+// 				Username: "root",
+// 				Hash:     "$argon2id$v=19$m=65536,t=3,p=2$nTPFgXmlMFphn506a/VQ2Q$0Y/KXMMxDb28CzuqGZdShAnNuNs3l3vInJRh3xd5uq4",
+// 				Email:    "root@root.com",
+// 				Enabled:  &enabled, Groups: []*fmodel.SecGroup{group},
+// 			}
 
-			err = adb.Create(user).Error
-			if err != nil {
-				return err
-			}
-			return nil
+// 			err = adb.Create(user).Error
+// 			if err != nil {
+// 				return err
+// 			}
+// 			return nil
 
-		})
+// 		})
 
-}
+// }
 
-//Run establishes connection to database server, create databases and migrates models
-func Run() error {
-	core.Init("setup")
-	dsns, err := dbmgr.DSNS()
-	if err != nil {
-		return err
-	}
-	mdb, err := dbmgr.DBN("postgres")
-	if err != nil {
-		return err
-	}
-	for _, dsn := range dsns {
-		if dsn != "postgres" {
-			err = mdb.Exec(fmt.Sprintf("CREATE DATABASE %s;", dsn)).Error
-			if err != nil {
-				log.Printf("DB Creation: %s", err.Error())
-			}
-		}
-	}
+// func Run() error {
+// 	core.Init("setup")
+// 	dsns, err := dbmgr.DSNS()
+// 	if err != nil {
+// 		return err
+// 	}
+// 	mdb, err := dbmgr.DBN("postgres")
+// 	if err != nil {
+// 		return err
+// 	}
+// 	for _, dsn := range dsns {
+// 		if dsn != "postgres" {
+// 			err = mdb.Exec(fmt.Sprintf("CREATE DATABASE %s;", dsn)).Error
+// 			if err != nil {
+// 				log.Printf("DB Creation: %s", err.Error())
+// 			}
+// 		}
+// 	}
 
-	prepareMigrations()
-	return dbmgr.MigrationRun()
-}
+// 	prepareMigrations()
+// 	dbmgr.MigrationRun()
 
-//Drop delete databases defined in "config:dsn:*" keys on redis
-func Drop() error {
-	core.Init("setup")
-	dsns, err := dbmgr.DSNS()
-	if err != nil {
-		return err
-	}
-	mdb, err := dbmgr.DBN("postgres")
-	if err != nil {
-		log.Printf("could not connect to master dbmgr.")
-		return nil
-	}
-	for _, dsn := range dsns {
-		if dsn != "postgres" {
+// 	return nil
+// }
 
-			err = mdb.Exec(fmt.Sprintf("DROP DATABASE %s;", dsn)).Error
-			if err != nil {
-				log.Printf("DB Creation: %s", err.Error())
-			}
-		}
-	}
+// func Drop() error {
+// 	core.Init("setup")
+// 	dsns, err := dbmgr.DSNS()
+// 	if err != nil {
+// 		return err
+// 	}
+// 	mdb, err := dbmgr.DBN("postgres")
+// 	if err != nil {
+// 		log.Printf("could not connect to master dbmgr.")
+// 		return nil
+// 	}
+// 	for _, dsn := range dsns {
+// 		if dsn != "postgres" {
 
-	return nil
-}
+// 			err = mdb.Exec(fmt.Sprintf("DROP DATABASE %s;", dsn)).Error
+// 			if err != nil {
+// 				log.Printf("DB Creation: %s", err.Error())
+// 			}
+// 		}
+// 	}
 
-//CreatePassHash returns hash generated by argon2id
+// 	return nil
+// }
+
+// CreatePassHash returns hash generated by argon2id
 func CreatePassHash(in string) (string, error) {
 	return hash.Hash(in)
 }

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nats
+  labels:
+    role: nats
+spec:
+  hostname: nats
+  containers:
+    - name: nats
+      image: digitalcircle/foundation-nats-server
+      ports:
+        - name: nats
+          containerPort: 4222
+          hostPort: 4222
+          protocol: TCP

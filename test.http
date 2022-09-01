@@ -53,3 +53,15 @@ Cookie: SESSIONID=Zm91bmRhdGlvbi5jMWRiZmI0NC05ZTg5LTQyMmMtYWZjOS02ZjE2NmM0OTBjZj
 {
     "Op":"R"
 }
+
+
+###
+# @name NATS-SOME
+POST {{basepath}}/some/a/b/c
+Content-Type: application/json
+Accept: application/json
+Cookie: SESSIONID=Zm91bmRhdGlvbi5jMWRiZmI0NC05ZTg5LTQyMmMtYWZjOS02ZjE2NmM0OTBjZjAuWEg1WTdWWXNycDhZYU9TVHl5UDBuUT09
+
+{
+  "Op":"R"
+}

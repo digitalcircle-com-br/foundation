@@ -1,41 +1,92 @@
 package authmgr
 
 import (
-	"net/http"
-
-	"github.com/digitalcircle-com-br/foundation/lib/core"
+	"context"
+	"errors"
 	"github.com/digitalcircle-com-br/foundation/lib/crudmgr"
-	"github.com/digitalcircle-com-br/foundation/lib/model"
+	"github.com/digitalcircle-com-br/foundation/lib/ctxmgr"
+	"github.com/digitalcircle-com-br/foundation/lib/fmodel"
 	"github.com/digitalcircle-com-br/foundation/lib/routemgr"
-	"github.com/digitalcircle-com-br/foundation/lib/runmgr"
+	"github.com/digitalcircle-com-br/foundation/services/auth/hash"
+	"github.com/gorilla/mux"
+	"gorm.io/gorm"
+	"net/http"
 )
 
-func Setup() error {
-	crudmgr.SetDefaultTenant("auth")
-
-	crudmgr.MustHandle(&model.SecPerm{})  // Defines a URI to table sec_perm in mux.Router
-	crudmgr.MustHandle(&model.SecGroup{}) // Defines a URI to table sec_group in mux.Router
-	crudmgr.MustHandle(&model.SecUser{})  // Defines a URI to table sec_user in mux.Router
-
-	return nil
+type UpdatePasswordRequest struct {
+	OldPassword     string `json:"oldPassword"`
+	NewPassword     string `json:"newPassword"`
+	ConfirmPassword string `json:"confirmPassword"`
 }
 
-/*Run configures mux.Router and start listening to redis's request queue identified by the key "queue: authmgr" */
-func Run() error {
-	core.Init("authmgr")
-	err := Setup()
+var db *gorm.DB
+
+func UpdatePassword(ctx context.Context, request *UpdatePasswordRequest) (interface{}, error) {
+
+	session := ctxmgr.Session(ctx)
+
+	if session == nil {
+		return nil, errors.New("invalid session")
+	}
+
+	if request.NewPassword != request.ConfirmPassword {
+		return nil, errors.New("password and confirm password must be the same")
+	}
+
+	var user fmodel.SecUser
+
+	dbResult := db.Table("sec_users").Where("username = ? AND enabled = true", session.Username).First(&user)
+
+	if user.ID == 0 {
+		return nil, errors.New("user not found")
+	}
+
+	oldPasswordIsCorrect, err := hash.Check(request.OldPassword, user.Hash)
+
 	if err != nil {
-		return err
+		return nil, err
+	}
+
+	if !oldPasswordIsCorrect {
+		return nil, errors.New("invalid password")
+	}
+
+	oldPasswordIsTheSame, err := hash.Check(request.NewPassword, user.Hash)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if oldPasswordIsTheSame {
+		return nil, errors.New("password cannot be the old password")
+	}
+
+/*Run configures mux.Router and start listening to redis's request queue identified by the key "queue: authmgr" */
+	passwordHash, err := hash.Hash(request.NewPassword)
+
+	if err != nil {
+		return nil, err
 	}
 
 	// Middleware to log incoming requests
-	routemgr.Router().Use(func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			core.Debug("Got: %s", r.URL.String())
-			h.ServeHTTP(w, r)
-		})
-	})
 
-	err = runmgr.RunABlock() // blocks execution
-	return err
+	dbResult = dbResult.Update("hash", passwordHash)
+
+	crudResult := crudmgr.CrudResponse{Data: nil, RowsAffected: dbResult.RowsAffected}
+
+	return crudResult, dbResult.Error
 }
+
+func Setup(r *mux.Router, db *gorm.DB) error {
+
+	crudmgr.MustHandle(r, db, &fmodel.SecPerm{})
+	crudmgr.MustHandle(r, db, &fmodel.SecGroup{})
+	crudmgr.MustHandle(r, db, &fmodel.SecUser{})
+
+	routemgr.Handle(r, "/changepasswod", http.MethodPost, fmodel.PERM_AUTH, UpdatePassword)
+	routemgr.Handle(r, "/changeuserpass", http.MethodPost, fmodel.PERM_USERADM, UpdatePassword)
+	routemgr.Handle(r, "/killallsessions", http.MethodPost, fmodel.PERM_USERADM, UpdatePassword)
+
+	return nil
+}
+>>>>>>> main

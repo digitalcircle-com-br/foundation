@@ -1,12 +1,11 @@
 package main
 
-import (
-	"github.com/digitalcircle-com-br/foundation/services/config"
-)
+import "errors"
 
 func main() {
-	err := config.Run()
-	if err != nil {
-		panic(err)
-	}
+	panic(errors.New("implement me"))
+	// err := config.Run()
+	// if err != nil {
+	// 	panic(err)
+	// }
 }

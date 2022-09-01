@@ -2,10 +2,6 @@ package main
 
 import (
 	"errors"
-	"log"
-
-	"github.com/alecthomas/kong"
-	"github.com/digitalcircle-com-br/foundation/services/setup"
 )
 
 var cmd struct {
@@ -20,42 +16,43 @@ var cmd struct {
 }
 
 func main() {
-	ctx := kong.Parse(&cmd)
-	var err error
+	panic(errors.New("implement me"))
+	// ctx := kong.Parse(&cmd)
+	// var err error
 
-	switch ctx.Command() {
-	case "load":
-		err = setup.Load()
-	case "run":
-		err = setup.Run()
-	case "clean":
-		err = setup.Clean()
-	case "drop":
-		err = setup.Drop()
-	case "hashpass":
-		out, err := setup.CreatePassHash(cmd.Hashpass.In)
-		if err == nil {
-			log.Printf("Hash: %s", out)
-		}
-	case "all":
-		for _, v := range []func() error{
-			setup.Drop,
-			setup.Clean,
-			setup.Load,
-			setup.Run,
-		} {
-			err = v()
-			if err != nil {
-				break
-			}
-		}
+	// switch ctx.Command() {
+	// case "load":
+	// 	err = setup.Load()
+	// case "run":
+	// 	err = setup.Run()
+	// case "clean":
+	// 	err = setup.Clean()
+	// case "drop":
+	// 	err = setup.Drop()
+	// case "hashpass":
+	// 	out, err := setup.CreatePassHash(cmd.Hashpass.In)
+	// 	if err == nil {
+	// 		log.Printf("Hash: %s", out)
+	// 	}
+	// case "all":
+	// 	for _, v := range []func() error{
+	// 		setup.Drop,
+	// 		setup.Clean,
+	// 		setup.Load,
+	// 		setup.Run,
+	// 	} {
+	// 		err = v()
+	// 		if err != nil {
+	// 			break
+	// 		}
+	// 	}
 
-	default:
-		err = errors.New("Unknown cmd: " + ctx.Command())
-	}
-	if err != nil {
-		panic(err)
-	}
+	// default:
+	// 	err = errors.New("Unknown cmd: " + ctx.Command())
+	// }
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	log.Printf("Setup done.")
+	// log.Printf("Setup done.")
 }
